@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'DicomBrowser/DicomBrowserWin.ui'
 #
-# Created: Fri Nov 11 17:02:33 2016
+# Created: Fri Nov 11 19:53:07 2016
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -89,18 +89,20 @@ class Ui_DicomBrowserWin(object):
         self.tableView.setSizePolicy(sizePolicy)
         self.tableView.setMinimumSize(QtCore.QSize(50, 0))
         self.tableView.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
+        self.tableView.setDragDropOverwriteMode(False)
         self.tableView.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         self.tableView.setSelectionBehavior(QtGui.QAbstractItemView.SelectRows)
         self.tableView.setShowGrid(False)
         self.tableView.setSortingEnabled(True)
         self.tableView.setObjectName(_fromUtf8("tableView"))
         self.tableView.horizontalHeader().setCascadingSectionResizes(True)
-        self.tableView.horizontalHeader().setDefaultSectionSize(150)
+        self.tableView.horizontalHeader().setDefaultSectionSize(10)
         self.tableView.horizontalHeader().setHighlightSections(False)
+        self.tableView.horizontalHeader().setMinimumSectionSize(30)
         self.tableView.horizontalHeader().setSortIndicatorShown(True)
-        self.tableView.horizontalHeader().setStretchLastSection(True)
+        self.tableView.horizontalHeader().setStretchLastSection(False)
         self.tableView.verticalHeader().setVisible(False)
-        self.tableView.verticalHeader().setCascadingSectionResizes(True)
+        self.tableView.verticalHeader().setCascadingSectionResizes(False)
         self.tableView.verticalHeader().setHighlightSections(False)
         self.seriesTab = QtGui.QTabWidget(self.seriesSplit)
         self.seriesTab.setTabPosition(QtGui.QTabWidget.North)
@@ -118,6 +120,7 @@ class Ui_DicomBrowserWin(object):
         self.tagView.setAlternatingRowColors(True)
         self.tagView.setSelectionMode(QtGui.QAbstractItemView.SingleSelection)
         self.tagView.setTextElideMode(QtCore.Qt.ElideRight)
+        self.tagView.setGridStyle(QtCore.Qt.NoPen)
         self.tagView.setSortingEnabled(True)
         self.tagView.setObjectName(_fromUtf8("tagView"))
         self.tagView.horizontalHeader().setCascadingSectionResizes(True)

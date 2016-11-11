@@ -223,6 +223,12 @@ def loadDicomDir(rootdir,statusfunc=lambda *args:None,numprocs=None):
 	return series.values()
 
 
+def tableResize(table):
+	table.horizontalHeader().setStretchLastSection(False)
+	table.resizeColumnsToContents()
+	table.horizontalHeader().setStretchLastSection(True)
+	
+
 class DicomSeries(object):
 	def __init__(self,seriesID,rootdir):
 		self.seriesID=seriesID
@@ -408,6 +414,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 		self.seriesMap={} # maps table entry to DicomSeries object it was generated from
 		self.seriesColumns=list(defaultColumns) # keywords for columns
 		self.selectedRow=-1 # selected series row
+		self.lastDir='.' # last loaded directory root
 
 		self.srcmodel=SourceListModel(self.srclist,self)
 		self.listView.setModel(self.srcmodel)
@@ -416,15 +423,19 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 		self.tableView.setModel(self.seriesmodel)
 		self.tableView.clicked.connect(self._tableClicked)
 		
+		self.seriesmodel.modelReset.connect(lambda:tableResize(self.tableView))
+		
 		self.tagmodel=TagTableModel()
 		self.tagView.setModel(self.tagmodel)
+
+		self.tagmodel.modelReset.connect(lambda:tableResize(self.tagView))
 
 		self.imageSlider.valueChanged.connect(self.setSeriesImage)
 
 		self.imageview=pg.ImageView()
 		self.seriesTab.insertTab(0,self.imageview,'2D View')
 		self.seriesTab.setCurrentIndex(0)
-
+		
 		for i in argv:
 			if os.path.isdir(i):
 				self.addSourceDir(i)
@@ -455,7 +466,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 				pass
 
 	def _openDirDialog(self):
-		rootdir=str(QtGui.QFileDialog.getExistingDirectory(self,'Choose Source Directory','.'))
+		rootdir=str(QtGui.QFileDialog.getExistingDirectory(self,'Choose Source Directory',self.lastDir))
 		if rootdir:
 			self.addSourceDir(rootdir)
 
@@ -518,6 +529,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
 	def addSourceDir(self,rootdir):
 		self.dirQueue.put(rootdir)
+		self.lastDir=os.path.dirname(rootdir)
 
 
 def main(args,app=None):
@@ -530,7 +542,7 @@ def main(args,app=None):
 	browser=DicomBrowser(args)
 	browser.show()
 
-	return app.exec_()
+	return app.exec_() if app else 0
 
 if __name__ == '__main__':
 	sys.exit(main(sys.argv))
