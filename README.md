@@ -15,7 +15,7 @@ or as a module:
     python -m DicomBrowser
     
 DicomBrowser requires **Python 2.7**, **PyQt4**, **numpy**, **pydicom** and **pyqtgraph**, the latter two are submodules of this project.
-Ensure these packages are installed, in the case of **pydicom&& and **pyqtgraph** ensure the submodules are included in your clone.
+Ensure these packages are installed, in the case of **pydicom** and **pyqtgraph** ensure the submodules are included in your clone.
 
 ## Authors
 
