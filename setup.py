@@ -17,10 +17,16 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-import subprocess
+#from setuptools import setup, find_packages
+import subprocess,os,sys
+from DicomBrowser import __appname__, __version__
 
-proc=subprocess.Popen(['pyrcc4','DicomBrowser/Resources.qrc'],stdout = subprocess.PIPE)
-out,_=proc.communicate()
-if proc.returncode==0:
-	with open('DicomBrowser/Resources_rc.py','wb') as o:
-		o.write(out)
+subprocess.check_call('pyrcc4 DicomBrowser/Resources.qrc > DicomBrowser/Resources_rc.py', shell=True)
+
+subprocess.check_call('python -c "import PyQt4.uic.pyuic" DicomBrowser/DicomBrowserWin.ui > DicomBrowser/DicomBrowserWin.py', shell=True)
+		
+#setup(
+#	name = __appname__,
+#	version = __version__,
+#	packages = ['DicomBrowser','pydicom']
+#)

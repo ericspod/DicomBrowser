@@ -1,2 +1,6 @@
-# Auto detect text files and perform LF normalization
-* -text
+*~
+#*
+*.pyc
+**/build
+**/dist
+**/.DS_Store

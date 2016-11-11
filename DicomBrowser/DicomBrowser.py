@@ -31,6 +31,7 @@ import numpy as np
 from PyQt4 import QtGui,QtCore, uic
 from PyQt4.QtCore import QDir,Qt
 import Resources_rc
+from DicomBrowserWin import Ui_DicomBrowserWin
 
 scriptdir= os.path.dirname(os.path.abspath(__file__)) # path of the current file
 
@@ -384,14 +385,13 @@ class TagTableModel(QtCore.QAbstractTableModel):
 			return self.tagList[index.row()][index.column()]
 		
 
-class DicomBrowser(QtGui.QMainWindow):
+class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
 	statusSignal=QtCore.pyqtSignal(str,int,int)
 
 	def __init__(self,argv,parent=None):
 		QtGui.QMainWindow.__init__(self,parent)
-		
-		uic.loadUi(scriptdir+'/DicomBrowserWin.ui', self)
+		self.setupUi(self)
 		
 		self.importButton.clicked.connect(self._openDirDialog)
 		self.statusSignal.connect(self.setStatus)
@@ -532,6 +532,6 @@ def main(args,app=None):
 
 	return app.exec_()
 
-
 if __name__ == '__main__':
 	sys.exit(main(sys.argv))
+	
