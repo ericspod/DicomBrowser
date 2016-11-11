@@ -1,5 +1,21 @@
 # DicomBrowser
-Lightweight portable Dicom browser application
+
+This is a lightweight portable Dicom browser application written in Python.
+It allows Dicom directories to be loaded, images and tag data viewed, and not much else aside.
+This is intended to be a cross-platform utility suitable for previewing Dicom data rather than doing any sort of processing.
+
+## Running
+
+DicomBrowser can be run directly as a script from the project's directory:
+
+    python DicomBrowser/DicomBrowser.py
+    
+or as a module:
+
+    python -m DicomBrowser
+    
+DicomBrowser requires **Python 2.7**, **PyQt4**, **numpy**, **pydicom** and **pyqtgraph**, the latter two are submodules of this project.
+Ensure these packages are installed, in the case of **pydicom&& and **pyqtgraph** ensure the submodules are included in your clone.
 
 ## Authors
 
