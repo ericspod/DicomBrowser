@@ -46,15 +46,6 @@ from pydicom.errors import InvalidDicomError
 	
 isDarwin=platform.system().lower()=='darwin'
 
-
-emptyImage=np.asarray([
-[1,0,0,0,1],
-[0,2,0,2,0],
-[0,0,5,0,0],
-[0,2,0,2,0],
-[1,0,0,0,1]
-])
-
 emptyImage=np.asarray([
 [  0,   0,   0,   0,   0,   0,   0,   0,   0],
 [  0,   0,   1,   2,   2,   2,   1,   0,   0],
@@ -67,9 +58,10 @@ emptyImage=np.asarray([
 [  0,   0,   0,   0,   0,   0,   0,   0,   0]
 ])
 
-
+# tag names of default columns
 defaultColumns=('PatientName','SeriesDescription','SeriesNumber','NumImages')
 
+# list of tags to initially load when a directory is scanned
 loadTags=('SeriesInstanceUID','TriggerTime','PatientName','SeriesDescription','SeriesNumber')
 
 # keyword/full name pairs for extra properties not represented as Dicom tags
@@ -182,32 +174,6 @@ def convertToDict(dcm):
 
 	return _datasetToDict(dcm)
 	
-	
-#def addDicomTagsToMap(dcm,tagmap):
-#	def _elemToValue(elem):
-#		value=None
-#		if elem.VR=='SQ':
-#			value=OrderedDict()
-#			for i,item in enumerate(elem):
-#				value['item_%i'%i]=_datasetToDict(item)
-#		elif elem.name!='Pixel Data':
-#			value=elem.value
-#			if not isPicklable(value):
-#				value=str(value)
-#
-#		return value
-#		
-#	for elem in dcm:
-#		name=elem.name
-#		value=_elemToValue(elem)
-#		#tag=(elem.tag.group,elem.tag.elem)
-#
-#		if value:
-#			if name not in tagmap:
-#				tagmap[name]=[value]
-#			elif len(tagmap[name])>1 or (len(tagmap[name])==1 and tagmap[name][0]!=value):
-#				tagmap[name].append(value)
-				
 
 def loadDicomFiles(filenames,queue):
 	for filename in filenames:
@@ -220,7 +186,6 @@ def loadDicomFiles(filenames,queue):
 			pass
 
 
-@timing
 def loadDicomDir(rootdir,statusfunc=lambda *args:None,numprocs=None):
 	numprocs=numprocs or cpu_count()
 	pool=Pool(processes=numprocs)
@@ -255,58 +220,6 @@ def loadDicomDir(rootdir,statusfunc=lambda *args:None,numprocs=None):
 	statusfunc('',0,0)
 
 	return series.values()
-
-
-#@timing
-#def loadDicomDir(rootdir,statusfunc=None,numthreads=0):
-#	assert os.path.isdir(rootdir)
-#	numthreads=numthreads or cpu_count()
-#	series={}
-#	filequeue=Queue()
-#	seriesqueue=Queue()
-#
-#	def _loadFiles():
-#		while not filequeue.empty():
-#			try:
-#				filename=filequeue.get(False)
-#				dcm=read_file(filename,stop_before_pixels=True)
-#				dcm={t:dcm.get(t) for t in loadTags if t in dcm}
-#				seriesqueue.put((filename,dcm))
-#			except Empty:
-#				pass
-#			except InvalidDicomError:
-#				pass
-#
-#	statusfunc('Loading DICOM files',0,0)
-#
-#	allfiles=[f for f in enumAllFiles(rootdir) if os.path.splitext(f)[1].lower() in ('','.dcm')]
-#	numfiles=len(allfiles)
-#	count=0
-#
-#	for f in allfiles:
-#		filequeue.put(f)
-#
-#	readthreads=[]
-#	for i in range(numthreads):
-#		rt=threading.Thread(target=_loadFiles)
-#		rt.start()
-#		readthreads.append(rt)
-#
-#	while any(rt.isAlive() for rt in readthreads) or not filequeue.empty() or not seriesqueue.empty():
-#		try:
-#			filename,dcm=seriesqueue.get(False)
-#			seriesid=dcm.get('SeriesInstanceUID','???')
-#			if seriesid not in series:
-#				series[seriesid]=DicomSeries(seriesid,rootdir)
-#
-#			series[seriesid].addFile(filename,dcm)
-#			count+=1
-#			statusfunc('Loading DICOM files',count,numfiles)
-#		except Empty:
-#			pass
-#
-#	statusfunc('',0,0)
-#	return series.values()
 
 
 class DicomSeries(object):
@@ -586,12 +499,7 @@ class DicomBrowser(QtGui.QMainWindow):
 
 			self.imageview.setImage(img.T,autoRange=autoRange,autoLevels=self.autoLevelsCheck.isChecked())
 			self.tagmodel.setDicomTags(series.getTagDict(i))
-			#self.tagView.resizeColumnsToContents()
-#			self.tagView.resizeRowsToContents()
 			
-			#printFlush(dir(self.imageview.getHistogramWidget().getLookupTable()))
-			#self.imageview.getHistogramWidget().setHistogramRange(self.imageview.levelMin,self.imageview.levelMin+100)
-
 	def setStatus(self,msg,progress=0,progressmax=0):
 		if not msg:
 			progress=0
