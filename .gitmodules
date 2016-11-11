@@ -1,0 +1,6 @@
+[submodule "pydicom"]
+	path = pydicom
+	url = git@github.com:darcymason/pydicom.git
+[submodule "pyqtgraph"]
+	path = pyqtgraph
+	url = git@github.com:pyqtgraph/pyqtgraph.git
