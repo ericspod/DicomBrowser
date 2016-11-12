@@ -4,3 +4,6 @@
 **/build
 **/dist
 **/.DS_Store
+DicomBrowser.egg-info/*
+build/*
+dist/*
