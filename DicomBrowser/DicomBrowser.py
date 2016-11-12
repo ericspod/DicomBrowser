@@ -537,7 +537,14 @@ def main(args,app=None):
 		app = QtGui.QApplication(args)
 		app.setAttribute(Qt.AA_DontUseNativeMenuBar) # in OSX, forces menubar to be in window
 		app.setStyle('Plastique')
-		app.setStyleSheet(open(scriptdir+'/DefaultUIStyle.css').read())
+		
+		# load the stylesheet included as a Qt resource
+		f=QtCore.QFile(':/css/DefaultUIStyle.css')
+		if f.open(QtCore.QFile.ReadOnly):
+			app.setStyleSheet(str(f.readAll()))
+			f.close()
+		else:
+			printFlush('Failed to read %r'%f.fileName())
 
 	browser=DicomBrowser(args)
 	browser.show()

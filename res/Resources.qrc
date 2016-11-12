@@ -3,4 +3,7 @@
     <file>checkbox.png</file>
     <file>uncheckbox.png</file>
   </qresource>
+  <qresource prefix="css">
+    <file>DefaultUIStyle.css</file>
+  </qresource>
 </RCC>
