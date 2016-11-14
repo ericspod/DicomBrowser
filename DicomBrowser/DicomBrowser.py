@@ -18,25 +18,25 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-import sys, os, platform, mmap, threading, time, pickle,math
+import sys, os, threading, time, pickle, math
 from operator import itemgetter
 from collections import OrderedDict
 from Queue import Queue, Empty
-from StringIO import StringIO
-from multiprocessing import Pool,Manager,cpu_count
+from multiprocessing import Pool, Manager, cpu_count
 from functools import wraps
 
 import numpy as np
 
-from PyQt4 import QtGui,QtCore, uic
-from PyQt4.QtCore import QDir,Qt
-import Resources_rc
+from PyQt4 import QtGui, QtCore
+from PyQt4.QtCore import Qt
 from DicomBrowserWin import Ui_DicomBrowserWin
 
 scriptdir= os.path.dirname(os.path.abspath(__file__)) # path of the current file
 
-sys.path.append(scriptdir+'/../pydicom')
-sys.path.append(scriptdir+'/../pyqtgraph')
+# this allows the script to be run directly from the repository without having to install pydicom or pyqtgraph
+if os.path.isdir(scriptdir+'/../pydicom'):
+	sys.path.append(scriptdir+'/../pydicom')
+	sys.path.append(scriptdir+'/../pyqtgraph')
 
 import pyqtgraph as pg
 
@@ -45,8 +45,7 @@ from pydicom.datadict import DicomDictionary
 from pydicom.errors import InvalidDicomError
 	
 	
-isDarwin=platform.system().lower()=='darwin'
-
+# question mark image
 emptyImage=np.asarray([
 [  0,   0,   0,   0,   0,   0,   0,   0,   0],
 [  0,   0,   1,   2,   2,   2,   1,   0,   0],
@@ -78,8 +77,7 @@ extraKeywords={
 keywordNameMap={v[4]:v[2] for v in DicomDictionary.values()}
 keywordNameMap.update(extraKeywords)
 
-# maps full names to keywords
-fullNameMap={v:k for k,v in keywordNameMap.items()} #{v[2]:v[4] for v in DicomDictionary.values()}
+fullNameMap={v:k for k,v in keywordNameMap.items()} # maps full names to keywords
 
 
 def enumAllFiles(rootdir):
@@ -113,6 +111,7 @@ def clamp(val,minv,maxv):
 	
 	
 def printFlush(*args):
+	'''Print args to the stdout separated by spaces and then flush.'''
 	sys.stdout.write(' '.join(map(str,args))+'\n')
 	sys.stdout.flush()
 	
@@ -147,6 +146,7 @@ def partitionSequence(maxval,part,numparts):
 	
 	
 def convertToDict(dcm):
+	'''Converts the Dicom file to an OrderedDict mapping (group,elem) tag pairs to (name,value) pairs, excluding pixel data.'''
 	def _datasetToDict(dcm):
 		result=OrderedDict()
 		for elem in dcm:
@@ -177,17 +177,26 @@ def convertToDict(dcm):
 	
 
 def loadDicomFiles(filenames,queue):
+	'''Load the Dicom files `filenames' and put an abbreviated tag->value map for each onto `queue'.'''
 	for filename in filenames:
 		try:
 			dcm=read_file(filename,stop_before_pixels=True)
-			#dcm=convertToDict(dcm)
-			dcm={t:dcm.get(t) for t in loadTags if t in dcm}
-			queue.put((filename,dcm))
+			tags={t:dcm.get(t) for t in loadTags if t in dcm}
+			queue.put((filename,tags))
 		except InvalidDicomError:
 			pass
 
 
-def loadDicomDir(rootdir,statusfunc=lambda *args:None,numprocs=None):
+@timing
+def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
+	'''
+	Load all the Dicom files from `rootdir' using `numprocs' number of processes. This will attempt to load each file
+	found in `rootdir' and store from each file the tags defined in loadTags. The filenames and the loaded tags for
+	Dicom files are stored in a DicomSeries object representing the acquisition series each file belongs to. The 
+	`statusfunc' callback is used to indicate loading status, taking as arguments a status string, count of loaded 
+	objects, and the total number to load. A status string of '' indicates loading is done. The default value causes 
+	no status indication to be made. Return value is a sequence of DicomSeries objects in no particular order.
+	'''
 	numprocs=numprocs or cpu_count()
 	pool=Pool(processes=numprocs)
 	m = Manager()
@@ -200,30 +209,37 @@ def loadDicomDir(rootdir,statusfunc=lambda *args:None,numprocs=None):
 
 	statusfunc('Loading DICOM files',0,0)
 
-	for i in range(numprocs):
-		s,e=partitionSequence(numfiles,i,numprocs)
-		r=pool.apply_async(loadDicomFiles,(allfiles[s:e],queue))
-		res.append(r)
-
-	while any(not r.ready() for r in res) or not queue.empty():
-		try:
-			filename,dcm=queue.get(False)
-			seriesid=dcm.get('SeriesInstanceUID','???')
-			if seriesid not in series:
-				series[seriesid]=DicomSeries(seriesid,rootdir)
-
-			series[seriesid].addFile(filename,dcm)
-			count+=1
-			statusfunc('Loading DICOM files',count,numfiles)
-		except Empty:
-			pass
-
-	statusfunc('',0,0)
+	try:
+		for i in range(numprocs):
+			s,e=partitionSequence(numfiles,i,numprocs)
+			r=pool.apply_async(loadDicomFiles,(allfiles[s:e],queue))
+			res.append(r)
+	
+		# loop so long as any process is busy or there are files on the queue to process
+		while any(not r.ready() for r in res) or not queue.empty():
+			try:
+				filename,dcm=queue.get(False)
+				seriesid=dcm.get('SeriesInstanceUID','???')
+				if seriesid not in series:
+					series[seriesid]=DicomSeries(seriesid,rootdir)
+	
+				series[seriesid].addFile(filename,dcm)
+				count+=1
+				
+				# update status only 100 times, doing it too frequently really slows things down
+				if count%(numfiles/100)==0: 
+					statusfunc('Loading DICOM files',count,numfiles)
+			except Empty: # from queue.get(), keep trying so long as the loop condition is true
+				pass
+	finally:
+		pool.close()
+		statusfunc('',0,0)
 
 	return series.values()
 
 
 def tableResize(table):
+	'''Resizes table columns to contents, setting the last section to stretch.'''
 	table.horizontalHeader().setStretchLastSection(False)
 	table.resizeColumnsToContents()
 	table.horizontalHeader().setStretchLastSection(True)
@@ -231,12 +247,12 @@ def tableResize(table):
 
 class DicomSeries(object):
 	def __init__(self,seriesID,rootdir):
-		self.seriesID=seriesID
-		self.rootdir=rootdir
-		self.filenames=[]
-		self.dcms=[]
-		self.imgcache={}
-		self.tagcache={}
+		self.seriesID=seriesID # ID of the series or ???
+		self.rootdir=rootdir # the directory where Dicoms were loaded from, files for this series may be in subdirectories
+		self.filenames=[] # list of filenames for the Dicom associated with this series
+		self.dcms=[] # loaded abbreviated tag->(name,value) maps, 1 for each of self.filenames
+		self.imgcache={} # cache of loaded image data, mapping index in self.filenames to ndarray objects or None for non-images files
+		self.tagcache={} # cache of all loaded tag values, mapping index in self.filenames to OrderedDict of tag->(name,value) maps
 		
 	def addFile(self,filename,dcm):
 		self.filenames.append(filename)
@@ -245,7 +261,7 @@ class DicomSeries(object):
 	def getTagDict(self,index):
 		if index not in self.tagcache:
 			dcm=read_file(self.filenames[index],stop_before_pixels=True)
-			self.tagcache[index]=dcm #convertToDict(dcm)
+			self.tagcache[index]=dcm
 			
 		return self.tagcache[index]
 
@@ -395,7 +411,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
 	statusSignal=QtCore.pyqtSignal(str,int,int)
 
-	def __init__(self,argv,parent=None):
+	def __init__(self,args,parent=None):
 		QtGui.QMainWindow.__init__(self,parent)
 		self.setupUi(self)
 		
@@ -436,7 +452,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 		self.seriesTab.insertTab(0,self.imageview,'2D View')
 		self.seriesTab.setCurrentIndex(0)
 		
-		for i in argv:
+		for i in args:
 			if os.path.isdir(i):
 				self.addSourceDir(i)
 
