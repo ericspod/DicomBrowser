@@ -43,25 +43,13 @@ import pyqtgraph as pg
 from pydicom.dicomio import read_file
 from pydicom.datadict import DicomDictionary
 from pydicom.errors import InvalidDicomError
-	
-	
-# question mark image
-emptyImage=np.asarray([
-[  0,   0,   0,   0,   0,   0,   0,   0,   0],
-[  0,   0,   1,   2,   2,   2,   1,   0,   0],
-[  0,   0,   2,   1,   0,   1,   2,   0,   0],
-[  0,   0,   0,   0,   0,   1,   2,   0,   0],
-[  0,   0,   0,   0,   1,   2,   1,   0,   0],
-[  0,   0,   0,   1,   2,   1,   0,   0,   0],
-[  0,   0,   0,   0,   0,   0,   0,   0,   0],
-[  0,   0,   0,   1,   2,   1,   0,   0,   0],
-[  0,   0,   0,   0,   0,   0,   0,   0,   0]
-])
 
-# tag names of default columns
-defaultColumns=('PatientName','SeriesDescription','SeriesNumber','NumImages')
 
-# list of tags to initially load when a directory is scanned
+# tag names of default columns in the series list, this can be changed to pull out different tag names for columns
+seriesListColumns=('PatientName','SeriesDescription','SeriesNumber','NumImages')
+# names of columns in tag tree, this shouldn't ever change
+tagTreeColumns=('Name','Tag','Value')
+# list of tags to initially load when a directory is scanned, loading only these speeds up scanning immensely
 loadTags=('SeriesInstanceUID','TriggerTime','PatientName','SeriesDescription','SeriesNumber')
 
 # keyword/full name pairs for extra properties not represented as Dicom tags
@@ -85,15 +73,6 @@ def enumAllFiles(rootdir):
 	for root, dirs, files in os.walk(rootdir):
 		for f in sorted(files):
 			yield os.path.join(root,f)
-			
-			
-def isPicklable(obj):
-	'''Returns True if `obj' can be pickled.'''
-	try:
-		pickle.dumps(obj)
-		return True
-	except:
-		return False
 
 
 def avgspan(vals):
@@ -109,26 +88,6 @@ def clamp(val,minv,maxv):
 		return minv
 	return val
 	
-	
-def printFlush(*args):
-	'''Print args to the stdout separated by spaces and then flush.'''
-	sys.stdout.write(' '.join(map(str,args))+'\n')
-	sys.stdout.flush()
-	
-	
-def timing(func):
-	'''This decorator prints to stdout the original function's execution time in seconds.'''
-	@wraps(func)
-	def timingwrap(*args,**kwargs):
-		printFlush(func.__name__)
-		start=time.time()
-		res=func(*args,**kwargs)
-		end=time.time()
-		printFlush(func.__name__, 'dT (s) =',(end-start))
-		return res
-
-	return timingwrap
-	
 
 def partitionSequence(maxval,part,numparts):
 	'''
@@ -143,37 +102,44 @@ def partitionSequence(maxval,part,numparts):
 		end=maxval
 
 	return long(start),long(end)
-	
-	
-def convertToDict(dcm):
-	'''Converts the Dicom file to an OrderedDict mapping (group,elem) tag pairs to (name,value) pairs, excluding pixel data.'''
-	def _datasetToDict(dcm):
-		result=OrderedDict()
-		for elem in dcm:
-			name=elem.name
+
+
+def tableResize(table):
+	'''Resizes table columns to contents, setting the last section to stretch.'''
+	table.horizontalHeader().setStretchLastSection(False)
+	table.resizeColumnsToContents()
+	table.horizontalHeader().setStretchLastSection(True)
+
+		
+def fillTagModel(model,dcm):
+	'''Fill a QStandardItemModel object `model' with a tree derived from the tags in `dcm'.'''
+	def _datasetToItem(parent,d):
+		for elem in d:
 			value=_elemToValue(elem)
-			tag=(elem.tag.group,elem.tag.elem)
-
-			if value:
-				result[tag]=(name,value)
-				#result[tag]=(fullNameMap.get(name,name),value)
-				
-		return result
-
+			parent1 = QtGui.QStandardItem(str(elem.name))
+			tagitem = QtGui.QStandardItem('(%04x, %04x)'%(elem.tag.group,elem.tag.elem))
+			
+			if isinstance(value,str):
+				parent.appendRow([parent1,tagitem,QtGui.QStandardItem(str(value))])
+			else:
+				parent.appendRow([parent1,tagitem])
+				for v in value:
+					parent1.appendRow(v)
+		
 	def _elemToValue(elem):
 		value=None
 		if elem.VR=='SQ':
-			value=OrderedDict()
+			value=[]
 			for i,item in enumerate(elem):
-				value['item_%i'%i]=_datasetToDict(item)
+				parent1 = QtGui.QStandardItem('%s %i'%(elem.name,i))
+				_datasetToItem(parent1,item)
+				value.append(parent1)
 		elif elem.name!='Pixel Data':
-			value=elem.value
-			if not isPicklable(value):
-				value=str(value)
+			value=str(elem.value)
 
-		return value
-
-	return _datasetToDict(dcm)
+		return value		
+				
+	_datasetToItem(model,dcm)
 	
 
 def loadDicomFiles(filenames,queue):
@@ -187,7 +153,6 @@ def loadDicomFiles(filenames,queue):
 			pass
 
 
-@timing
 def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
 	'''
 	Load all the Dicom files from `rootdir' using `numprocs' number of processes. This will attempt to load each file
@@ -236,16 +201,14 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
 		statusfunc('',0,0)
 
 	return series.values()
-
-
-def tableResize(table):
-	'''Resizes table columns to contents, setting the last section to stretch.'''
-	table.horizontalHeader().setStretchLastSection(False)
-	table.resizeColumnsToContents()
-	table.horizontalHeader().setStretchLastSection(True)
 	
 
 class DicomSeries(object):
+	'''
+	This type represents a Dicom series as a list of Dicom files sharing a series UID. The assumption is that the images
+	of a series were captured together and so will always have a number of fields in common, such as patient name, so
+	Dicoms should be organized by series. This type will also cache loaded Dicom tags and images
+	'''
 	def __init__(self,seriesID,rootdir):
 		self.seriesID=seriesID # ID of the series or ???
 		self.rootdir=rootdir # the directory where Dicoms were loaded from, files for this series may be in subdirectories
@@ -255,10 +218,12 @@ class DicomSeries(object):
 		self.tagcache={} # cache of all loaded tag values, mapping index in self.filenames to OrderedDict of tag->(name,value) maps
 		
 	def addFile(self,filename,dcm):
+		'''Add a filename and abbreviated tag map to the series.'''
 		self.filenames.append(filename)
 		self.dcms.append(dcm)
 		
-	def getTagDict(self,index):
+	def getTagObject(self,index):
+		'''Get the object storing tag information from Dicom file at the given index.'''
 		if index not in self.tagcache:
 			dcm=read_file(self.filenames[index],stop_before_pixels=True)
 			self.tagcache[index]=dcm
@@ -266,6 +231,7 @@ class DicomSeries(object):
 		return self.tagcache[index]
 
 	def getExtraTagValues(self):
+		'''Return the extra tag values calculated from the series tag info stored in self.dcms.'''
 		start,interval,numtimes=self.getTimestepSpec()
 		extravals={
 			'NumImages':len(self.dcms),
@@ -278,17 +244,17 @@ class DicomSeries(object):
 		return extravals
 		
 	def getTagValues(self,names,index=0):
+		'''Get the tag values for tag names listed in `names' for image at the given index.'''
 		if not self.filenames:
 			return ()
 
-		dcm=self.getTagDict(index)
+		dcm=self.getTagObject(index)
 		extravals=self.getExtraTagValues()
 		
 		return tuple(str(dcm.get(n,extravals.get(n,''))) for n in names)
 
 	def getPixelData(self,index):
 		'''Get the pixel data Numpy array for file at position `index` in self.filenames, or None if there is no pixel data.'''
-
 		if index not in self.imgcache:
 			img=None
 			try:
@@ -319,19 +285,6 @@ class DicomSeries(object):
 			if len(times)==1:
 				times=times*2
 			return times[0],avgspan(times),len(times)
-
-
-class SourceListModel(QtCore.QAbstractListModel):
-	def __init__(self, srclist, parent=None):
-		QtCore.QAbstractListModel.__init__(self, parent)
-		self.srclist = srclist
-
-	def rowCount(self, parent=QtCore.QModelIndex()):
-		return len(self.srclist)
-
-	def data(self, index, role):
-		if index.isValid() and role == Qt.DisplayRole:
-			return self.srclist[index.row()][0]
 
 
 class SeriesTableModel(QtCore.QAbstractTableModel):
@@ -368,45 +321,6 @@ class SeriesTableModel(QtCore.QAbstractTableModel):
 			return str(self.seriesTable[index.row()][index.column()])
 
 
-class TagTableModel(QtCore.QAbstractTableModel):
-	def __init__(self,parent=None):
-		QtCore.QAbstractTableModel.__init__(self, parent)
-		self.columns=('Tag','Name','Value')
-		self.tagList=[]
-		self.sortCol=0
-		self.sortOrder=Qt.AscendingOrder
-		
-	def setDicomTags(self,tagdict):
-		tagdict=convertToDict(tagdict)
-		self.tagList=[('(%x, %x)'%t,str(n).strip(),repr(v).strip()) for t,(n,v) in tagdict.items()]
-		
-		self.resort()
-		
-	def rowCount(self, parent):
-		return len(self.tagList)
-		
-	def columnCount(self,parent):
-		return len(self.columns)
-		
-	def sort(self,column,order):
-		self.sortCol=column
-		self.sortOrder=order
-		self.resort()
-		
-	def resort(self):
-		self.layoutAboutToBeChanged.emit()
-		self.tagList.sort(key=itemgetter(self.sortCol),reverse=self.sortOrder==Qt.DescendingOrder)
-		self.layoutChanged.emit()
-		
-	def headerData(self, section, orientation, role):
-		if role == Qt.DisplayRole and orientation==Qt.Horizontal:
-			return self.columns[section]
-			
-	def data(self, index, role):
-		if index.isValid() and role == Qt.DisplayRole:
-			return self.tagList[index.row()][index.column()]
-		
-
 class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
 	statusSignal=QtCore.pyqtSignal(str,int,int)
@@ -428,11 +342,11 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 		self.srclist=[]
 		self.seriesTable=[] # == self.seriesMap.keys()
 		self.seriesMap={} # maps table entry to DicomSeries object it was generated from
-		self.seriesColumns=list(defaultColumns) # keywords for columns
+		self.seriesColumns=list(seriesListColumns) # keywords for columns
 		self.selectedRow=-1 # selected series row
 		self.lastDir='.' # last loaded directory root
 
-		self.srcmodel=SourceListModel(self.srclist,self)
+		self.srcmodel=QtGui.QStringListModel() #SourceListModel(self.srclist,self)
 		self.listView.setModel(self.srcmodel)
 
 		self.seriesmodel=SeriesTableModel(self.seriesTable,self.seriesColumns,self)
@@ -441,16 +355,19 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 		
 		self.seriesmodel.modelReset.connect(lambda:tableResize(self.tableView))
 		
-		self.tagmodel=TagTableModel()
+		self.tagmodel=QtGui.QStandardItemModel()
 		self.tagView.setModel(self.tagmodel)
-
-		self.tagmodel.modelReset.connect(lambda:tableResize(self.tagView))
 
 		self.imageSlider.valueChanged.connect(self.setSeriesImage)
 
 		self.imageview=pg.ImageView()
 		self.seriesTab.insertTab(0,self.imageview,'2D View')
 		self.seriesTab.setCurrentIndex(0)
+		
+		# load the empty image placeholder into a ndarray
+		qimg=QtGui.QImage(':/icons/noimage.png')
+		bytedata=qimg.constBits().asstring(qimg.width()*qimg.height())
+		self.noimg=np.ndarray((qimg.width(),qimg.height()),dtype=np.ubyte,buffer=bytedata)
 		
 		for i in args:
 			if os.path.isdir(i):
@@ -496,7 +413,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 				self.seriesMap[entry]=s
 				self.seriesTable.append(entry)
 
-		self.srcmodel.modelReset.emit()
+		self.srcmodel.setStringList([s[0] for s in self.srclist])
 		self.seriesmodel.modelReset.emit()
 
 	def _tableClicked(self,item):
@@ -522,10 +439,14 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 			self.numLabel.setText(str(i))
 			img=series.getPixelData(i)
 			if img is None:
-				img=emptyImage
+				img=self.noimg
 
 			self.imageview.setImage(img.T,autoRange=autoRange,autoLevels=self.autoLevelsCheck.isChecked())
-			self.tagmodel.setDicomTags(series.getTagDict(i))
+			self.tagmodel.clear()
+			self.tagmodel.setHorizontalHeaderLabels(tagTreeColumns)
+			fillTagModel(self.tagmodel,series.getTagObject(i))
+			self.tagView.expandAll()
+			self.tagView.resizeColumnToContents(0)
 			
 	def setStatus(self,msg,progress=0,progressmax=0):
 		if not msg:
@@ -560,7 +481,7 @@ def main(args,app=None):
 			app.setStyleSheet(str(f.readAll()))
 			f.close()
 		else:
-			printFlush('Failed to read %r'%f.fileName())
+			print ('Failed to read %r'%f.fileName())
 
 	browser=DicomBrowser(args)
 	browser.show()

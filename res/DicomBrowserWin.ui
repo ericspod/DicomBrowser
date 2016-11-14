@@ -135,6 +135,67 @@
         <property name="bottomMargin">
          <number>6</number>
         </property>
+        <item row="1" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="topMargin">
+           <number>0</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="numLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>30</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>30</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="imageSlider">
+            <property name="pageStep">
+             <number>1</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="invertedAppearance">
+             <bool>false</bool>
+            </property>
+            <property name="tickPosition">
+             <enum>QSlider::TicksAbove</enum>
+            </property>
+            <property name="tickInterval">
+             <number>1</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="autoLevelsCheck">
+            <property name="text">
+             <string>Auto Levels</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item row="0" column="0">
          <widget class="QSplitter" name="seriesSplit">
           <property name="orientation">
@@ -221,7 +282,10 @@
             </attribute>
             <layout class="QGridLayout" name="gridLayout_4">
              <item row="0" column="0">
-              <widget class="QTableView" name="tagView">
+              <widget class="QTreeView" name="tagView">
+               <property name="verticalScrollBarPolicy">
+                <enum>Qt::ScrollBarAlwaysOn</enum>
+               </property>
                <property name="editTriggers">
                 <set>QAbstractItemView::NoEditTriggers</set>
                </property>
@@ -240,109 +304,15 @@
                <property name="textElideMode">
                 <enum>Qt::ElideRight</enum>
                </property>
-               <property name="gridStyle">
-                <enum>Qt::NoPen</enum>
-               </property>
                <property name="sortingEnabled">
                 <bool>true</bool>
                </property>
-               <attribute name="horizontalHeaderCascadingSectionResizes">
-                <bool>true</bool>
-               </attribute>
-               <attribute name="horizontalHeaderDefaultSectionSize">
-                <number>140</number>
-               </attribute>
-               <attribute name="horizontalHeaderHighlightSections">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="horizontalHeaderMinimumSectionSize">
-                <number>80</number>
-               </attribute>
-               <attribute name="horizontalHeaderShowSortIndicator" stdset="0">
-                <bool>true</bool>
-               </attribute>
-               <attribute name="horizontalHeaderStretchLastSection">
-                <bool>true</bool>
-               </attribute>
-               <attribute name="verticalHeaderVisible">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="verticalHeaderCascadingSectionResizes">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="verticalHeaderHighlightSections">
-                <bool>false</bool>
-               </attribute>
-               <attribute name="verticalHeaderMinimumSectionSize">
-                <number>40</number>
-               </attribute>
               </widget>
              </item>
             </layout>
            </widget>
           </widget>
          </widget>
-        </item>
-        <item row="1" column="0">
-         <layout class="QHBoxLayout" name="horizontalLayout">
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <widget class="QLabel" name="numLabel">
-            <property name="sizePolicy">
-             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-              <horstretch>0</horstretch>
-              <verstretch>0</verstretch>
-             </sizepolicy>
-            </property>
-            <property name="minimumSize">
-             <size>
-              <width>30</width>
-              <height>0</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>30</width>
-              <height>16777215</height>
-             </size>
-            </property>
-            <property name="text">
-             <string>0</string>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QSlider" name="imageSlider">
-            <property name="pageStep">
-             <number>1</number>
-            </property>
-            <property name="orientation">
-             <enum>Qt::Horizontal</enum>
-            </property>
-            <property name="invertedAppearance">
-             <bool>false</bool>
-            </property>
-            <property name="tickPosition">
-             <enum>QSlider::TicksAbove</enum>
-            </property>
-            <property name="tickInterval">
-             <number>1</number>
-            </property>
-           </widget>
-          </item>
-          <item>
-           <widget class="QCheckBox" name="autoLevelsCheck">
-            <property name="text">
-             <string>Auto Levels</string>
-            </property>
-            <property name="checked">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-         </layout>
         </item>
        </layout>
       </widget>

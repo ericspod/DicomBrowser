@@ -1,5 +1,6 @@
 <RCC>
   <qresource prefix="icons">
+    <file>noimage.png</file>
     <file>checkbox.png</file>
     <file>uncheckbox.png</file>
   </qresource>

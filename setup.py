@@ -18,12 +18,15 @@
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
 from setuptools import setup
-import subprocess
+import subprocess,sys
 from DicomBrowser import __appname__, __version__
 
 # generate source files
 subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc.py', shell=True)
 subprocess.check_call('python -c "import PyQt4.uic.pyuic" res/DicomBrowserWin.ui > DicomBrowser/DicomBrowserWin.py', shell=True)
+
+if 'generate' in sys.argv: # generate only, quit at this point before setup
+	sys.exit(0)
 		
 setup(
 	name = __appname__,
