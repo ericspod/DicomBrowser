@@ -7,3 +7,4 @@
 DicomBrowser.egg-info/*
 build/*
 dist/*
+*.spec

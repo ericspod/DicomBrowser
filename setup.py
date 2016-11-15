@@ -33,12 +33,37 @@ if 'app' in sys.argv:
 	sys.argv.remove('app')
 	appname='%s_%s'%(__appname__,__version__)
 	icon='res/icon.icns' if platform.system().lower()=='darwin' else 'res/icon.ico'
+	paths=['DicomBrowser','pydicom','pyqtgraph']
+	hidden=['Queue']
+	flags='yw'
 	
-	subprocess.check_call('pyinstaller -F -y -w -i %s -n %s -p pydicom -p pyqtgraph -p DicomBrowser --hidden-import Queue DicomBrowser/__main__.py'%(icon,appname))
+	if 'win' not in platform.system().lower():
+		# multiprocessing has issues with Windows one-file packages (see https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing)
+		flags+='F'
+	
+	paths=' '.join('-p %s'%p for p in paths)
+	hidden=' '.join('--hidden-import %s'%h for h in hidden)
+	flags=' '.join('-%s'%f for f in flags)
+	
+	cmd='pyinstaller %s -i %s -n %s %s %s DicomBrowser/__main__.py'%(flags,icon,appname,paths,hidden)
+	
+	subprocess.check_call(cmd)
 	sys.exit(0)
 	
 setup(
 	name = __appname__,
 	version = __version__,
-	packages = ['DicomBrowser']
+	packages=['DicomBrowser'],
+	author='Eric Kerfoot',
+	author_email="eric.kerfoot@kcl.ac.uk",
+	url="http://github.com/ericspod/DicomBrowser",
+	license="GPLv3",
+	install_requires=['numpy','PyQt4','pydicom','pyqtgraph'],
+	description='Lightweight portable DICOM viewer with interface for images and tags',
+	keywords="dicom python medical imaging pydicom pyqtgraph",
+	long_description='''
+	This is a lightweight portable Dicom browser application written in Python. It allows Dicom directories to be loaded, 
+	images and tag data viewed, and not much else aside. This is intended to be a cross-platform utility suitable for 
+	previewing Dicom data rather than doing any sort of processing.
+	'''
 )
