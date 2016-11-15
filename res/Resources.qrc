@@ -3,6 +3,7 @@
     <file>noimage.png</file>
     <file>checkbox.png</file>
     <file>uncheckbox.png</file>
+    <file>icon.png</file>
   </qresource>
   <qresource prefix="css">
     <file>DefaultUIStyle.css</file>

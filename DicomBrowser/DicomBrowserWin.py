@@ -2,8 +2,7 @@
 
 # Form implementation generated from reading ui file 'res/DicomBrowserWin.ui'
 #
-# Created: Mon Nov 14 17:33:29 2016
-#      by: PyQt4 UI code generator 4.10.4
+# Created by: PyQt4 UI code generator 4.11.4
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -28,7 +27,7 @@ class Ui_DicomBrowserWin(object):
         DicomBrowserWin.setObjectName(_fromUtf8("DicomBrowserWin"))
         DicomBrowserWin.resize(1188, 843)
         icon = QtGui.QIcon()
-        icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/icons/image.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
+        icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/icons/icon.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         DicomBrowserWin.setWindowIcon(icon)
         DicomBrowserWin.setAnimated(False)
         self.centralwidget = QtGui.QWidget(DicomBrowserWin)

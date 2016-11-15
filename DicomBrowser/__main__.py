@@ -1,6 +1,8 @@
 
 from DicomBrowser import main
-import sys
+import sys, multiprocessing
 
-sys.exit(main(sys.argv))
+if __name__ == '__main__':
+	multiprocessing.freeze_support()
+	sys.exit(main(sys.argv))
 	

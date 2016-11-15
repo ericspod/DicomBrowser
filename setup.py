@@ -18,8 +18,9 @@
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
 from setuptools import setup
-import subprocess,sys
+import subprocess, sys, platform
 from DicomBrowser import __appname__, __version__
+
 
 # generate source files
 subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc.py', shell=True)
@@ -28,6 +29,14 @@ subprocess.check_call('python -c "import PyQt4.uic.pyuic" res/DicomBrowserWin.ui
 if 'generate' in sys.argv: # generate only, quit at this point before setup
 	sys.exit(0)
 		
+if 'app' in sys.argv:
+	sys.argv.remove('app')
+	appname='%s_%s'%(__appname__,__version__)
+	icon='res/icon.icns' if platform.system().lower()=='darwin' else 'res/icon.ico'
+	
+	subprocess.check_call('pyinstaller -F -y -w -i %s -n %s -p pydicom -p pyqtgraph -p DicomBrowser --hidden-import Queue DicomBrowser/__main__.py'%(icon,appname))
+	sys.exit(0)
+	
 setup(
 	name = __appname__,
 	version = __version__,
