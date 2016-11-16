@@ -11,11 +11,11 @@ Ensure these packages are installed, in the case of **pydicom** and **pyqtgraph*
 
     git clone --recursive https://github.com/ericspod/DicomBrowser.git
 
-DicomBrowser can be installed using the **setup.py** script:
+DicomBrowser can be installed using the **setup.py** script (although this isn't necessary, see below):
 
     python setup.py install
 
-This will generate the necessary files for the UI and install the module but will not install other needed packages. 
+This will generate the necessary files for the UI, install the module, and create a script to run the application from the command line called *DicomBrowser*, but will not install other needed packages. 
 Ensure the pydicom and pyqtgraph submodules have been checked out and then run the above command in each to install them.
 
 PyQt4 must be acquired through your package manager or through its website. Numpy can be installed through your package manager, the website, or **pip**:
@@ -36,6 +36,8 @@ or as a module:
 
 The releases also include pre-built Windows and OSX standalone applications, allowing you to download these and run the
 application without installing Python or the necessary packages.
+
+Directories provided as command line arguments will be imported, any other arguments or files will be ignored.
 
 ## Authors
 
