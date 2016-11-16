@@ -50,8 +50,8 @@ if 'app' in sys.argv:
 	else:
 		icon='-i res/icon.png' # does this even work?
 		
-	if 'win' not in platform.system().lower():
-		# multiprocessing has issues with Windows one-file packages (see https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing)
+	# multiprocessing has issues with Windows one-file packages (see https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing)
+	if plat!='win':
 		flags+='F'
 	
 	paths=' '.join('-p %s'%p for p in paths)
