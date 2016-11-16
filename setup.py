@@ -48,7 +48,7 @@ if 'app' in sys.argv:
 	elif plat=='osx':
 		icon='-i res/icon.icns'
 	else:
-		icon='-i res/icon.ico'
+		icon='-i res/icon.png' # does this even work?
 		
 	if 'win' not in platform.system().lower():
 		# multiprocessing has issues with Windows one-file packages (see https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing)
@@ -59,9 +59,12 @@ if 'app' in sys.argv:
 	flags=' '.join('-%s'%f for f in flags)
 	
 	cmd='pyinstaller %s %s -n %s %s %s DicomBrowser/__main__.py'%(flags,icon,appname,paths,hidden)
-	
-	print cmd
 	subprocess.check_call(cmd,shell=True)
+	
+	if plat=='osx':
+		cmd='cd dist && hdiutil create -volname %(name)s -srcfolder %(name)s.app -ov -format UDZO -imagekey zlib-level=9 %(name)s.dmg'%{'name':appname}
+		subprocess.check_call(cmd,shell=True)
+	
 	sys.exit(0)
 	
 setup(
