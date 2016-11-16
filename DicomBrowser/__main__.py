@@ -1,3 +1,4 @@
+#! python
 
 from DicomBrowser import main
 import sys, multiprocessing

@@ -18,7 +18,7 @@
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
 from setuptools import setup
-import subprocess, sys, platform
+import subprocess, sys, platform, os, glob
 from DicomBrowser import __appname__, __version__
 
 if platform.system().lower()=='darwin':
@@ -64,8 +64,18 @@ if 'app' in sys.argv:
 	if plat=='osx':
 		cmd='cd dist && hdiutil create -volname %(name)s -srcfolder %(name)s.app -ov -format UDZO -imagekey zlib-level=9 %(name)s.dmg'%{'name':appname}
 		subprocess.check_call(cmd,shell=True)
+	elif plat=='win':
+		for f in glob.glob('dist/%s/mkl_*.dll'%appname): # remove uncessary MKL libraries
+			os.remove(f)
 	
-	sys.exit(0)
+	sys.exit(0) # quit at this point to only create the app file
+	
+	
+long_description='''
+This is a lightweight portable Dicom browser application written in Python. It allows Dicom directories to be loaded, 
+images and tag data viewed, and not much else aside. This is intended to be a cross-platform utility suitable for 
+previewing Dicom data rather than doing any sort of processing.
+'''
 	
 setup(
 	name = __appname__,
@@ -75,12 +85,8 @@ setup(
 	author_email="eric.kerfoot@kcl.ac.uk",
 	url="http://github.com/ericspod/DicomBrowser",
 	license="GPLv3",
-	install_requires=['numpy','PyQt4','pydicom','pyqtgraph'],
 	description='Lightweight portable DICOM viewer with interface for images and tags',
 	keywords="dicom python medical imaging pydicom pyqtgraph",
-	long_description='''
-	This is a lightweight portable Dicom browser application written in Python. It allows Dicom directories to be loaded, 
-	images and tag data viewed, and not much else aside. This is intended to be a cross-platform utility suitable for 
-	previewing Dicom data rather than doing any sort of processing.
-	'''
+	long_description=long_description.strip(),
+	entry_points={ 'console_scripts': ['DicomBrowser = DicomBrowser:mainargv'] }
 )

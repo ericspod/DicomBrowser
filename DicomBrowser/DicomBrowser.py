@@ -469,7 +469,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 		self.lastDir=os.path.dirname(rootdir)
 
 
-def main(args,app=None):
+def main(args=[],app=None):
 	if not app:
 		app = QtGui.QApplication(args)
 		app.setAttribute(Qt.AA_DontUseNativeMenuBar) # in OSX, forces menubar to be in window
@@ -487,6 +487,12 @@ def main(args,app=None):
 	browser.show()
 
 	return app.exec_() if app else 0
+
+
+def mainargv():
+	'''setuptools compatible entry point.'''
+	main(sys.argv)
+	
 
 if __name__ == '__main__':
 	sys.exit(main(sys.argv))
