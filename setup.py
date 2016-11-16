@@ -21,6 +21,12 @@ from setuptools import setup
 import subprocess, sys, platform
 from DicomBrowser import __appname__, __version__
 
+if platform.system().lower()=='darwin':
+	plat='osx'
+elif platform.system().lower()=='windows':
+	plat='win'
+else:
+	plat='linux'
 
 # generate source files
 subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc.py', shell=True)
@@ -37,6 +43,13 @@ if 'app' in sys.argv:
 	hidden=['Queue']
 	flags='yw'
 	
+	if plat=='win':
+		icon='-i res/icon.ico'
+	elif plat=='osx':
+		icon='-i res/icon.icns'
+	else:
+		icon='-i res/icon.ico'
+		
 	if 'win' not in platform.system().lower():
 		# multiprocessing has issues with Windows one-file packages (see https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing)
 		flags+='F'
@@ -45,9 +58,10 @@ if 'app' in sys.argv:
 	hidden=' '.join('--hidden-import %s'%h for h in hidden)
 	flags=' '.join('-%s'%f for f in flags)
 	
-	cmd='pyinstaller %s -i %s -n %s %s %s DicomBrowser/__main__.py'%(flags,icon,appname,paths,hidden)
+	cmd='pyinstaller %s %s -n %s %s %s DicomBrowser/__main__.py'%(flags,icon,appname,paths,hidden)
 	
-	subprocess.check_call(cmd)
+	print cmd
+	subprocess.check_call(cmd,shell=True)
 	sys.exit(0)
 	
 setup(
