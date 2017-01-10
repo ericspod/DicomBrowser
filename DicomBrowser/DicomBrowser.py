@@ -163,7 +163,6 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
 	no status indication to be made. Return value is a sequence of DicomSeries objects in no particular order.
 	'''
 	numprocs=numprocs or cpu_count()
-	pool=Pool(processes=numprocs)
 	m = Manager()
 	queue=m.Queue()
 	allfiles=list(enumAllFiles(rootdir))
@@ -171,10 +170,15 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
 	res=[]
 	series={}
 	count=0
+	
+	if not numfiles:
+		return []
 
 	statusfunc('Loading DICOM files',0,0)
-
+	
 	try:
+		pool=Pool(processes=numprocs)
+		
 		for i in range(numprocs):
 			s,e=partitionSequence(numfiles,i,numprocs)
 			r=pool.apply_async(loadDicomFiles,(allfiles[s:e],queue))
@@ -192,7 +196,7 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
 				count+=1
 				
 				# update status only 100 times, doing it too frequently really slows things down
-				if count%(numfiles/100)==0: 
+				if numfiles<100 or count%(numfiles/100)==0: 
 					statusfunc('Loading DICOM files',count,numfiles)
 			except Empty: # from queue.get(), keep trying so long as the loop condition is true
 				pass
