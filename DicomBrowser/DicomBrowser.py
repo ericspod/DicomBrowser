@@ -120,8 +120,13 @@ def fillTagModel(model,dcm):
 			tagitem = QtGui.QStandardItem('(%04x, %04x)'%(elem.tag.group,elem.tag.elem))
 			
 			if isinstance(value,str):
-				parent.appendRow([parent1,tagitem,QtGui.QStandardItem(str(value))])
-			else:
+				try:
+					value=value.decode('ascii')
+				except:
+					value=repr(value)
+					
+				parent.appendRow([parent1,tagitem,QtGui.QStandardItem(value)])
+			elif value is not None:
 				parent.appendRow([parent1,tagitem])
 				for v in value:
 					parent1.appendRow(v)
@@ -446,11 +451,14 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 				img=self.noimg
 
 			self.imageview.setImage(img.T,autoRange=autoRange,autoLevels=self.autoLevelsCheck.isChecked())
+			
+			vpos=self.tagView.verticalScrollBar().value()
 			self.tagmodel.clear()
 			self.tagmodel.setHorizontalHeaderLabels(tagTreeColumns)
 			fillTagModel(self.tagmodel,series.getTagObject(i))
 			self.tagView.expandAll()
 			self.tagView.resizeColumnToContents(0)
+			self.tagView.verticalScrollBar().setValue(vpos)
 			
 	def setStatus(self,msg,progress=0,progressmax=0):
 		if not msg:
