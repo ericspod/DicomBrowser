@@ -30,7 +30,7 @@ else:
 
 # generate source files
 subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc.py', shell=True)
-subprocess.check_call('python -c "import PyQt4.uic.pyuic" res/DicomBrowserWin.ui > DicomBrowser/DicomBrowserWin.py', shell=True)
+subprocess.check_call('python -m PyQt4.uic.pyuic res/DicomBrowserWin.ui > DicomBrowser/DicomBrowserWin.py', shell=True)
 
 if 'generate' in sys.argv: # generate only, quit at this point before setup
 	sys.exit(0)
@@ -65,7 +65,7 @@ if 'app' in sys.argv:
 		cmd='cd dist && hdiutil create -volname %(name)s -srcfolder %(name)s.app -ov -format UDZO -imagekey zlib-level=9 %(name)s.dmg'%{'name':appname}
 		subprocess.check_call(cmd,shell=True)
 	elif plat=='win':
-		for f in glob.glob('dist/%s/mkl_*.dll'%appname): # remove uncessary MKL libraries
+		for f in glob.glob('dist/%s/mkl_*.dll'%appname): # remove unnecessary MKL libraries
 			os.remove(f)
 	
 	sys.exit(0) # quit at this point to only create the app file

@@ -504,8 +504,3 @@ def main(args=[],app=None):
 def mainargv():
 	'''setuptools compatible entry point.'''
 	main(sys.argv)
-	
-
-if __name__ == '__main__':
-	sys.exit(main(sys.argv))
-	
