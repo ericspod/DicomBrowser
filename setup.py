@@ -62,7 +62,7 @@ if 'app' in sys.argv:
 	subprocess.check_call(cmd,shell=True)
 	
 	if plat=='osx':
-		cmd='cd dist && hdiutil create -volname %(name)s -srcfolder %(name)s.app -ov -format UDZO -imagekey zlib-level=9 %(name)s.dmg'%{'name':appname}
+		cmd='cd dist && hdiutil create -size 1000000k -volname %(name)s -srcfolder %(name)s.app -ov -format UDZO -imagekey zlib-level=9 %(name)s.dmg'%{'name':appname}
 		subprocess.check_call(cmd,shell=True)
 	elif plat=='win':
 		for f in glob.glob('dist/%s/mkl_*.dll'%appname): # remove unnecessary MKL libraries
