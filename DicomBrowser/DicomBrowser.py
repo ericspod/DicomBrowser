@@ -22,7 +22,7 @@ import sys, os, threading, time, pickle, math
 from operator import itemgetter
 from collections import OrderedDict
 from Queue import Queue, Empty
-from multiprocessing import Pool, Manager, cpu_count
+from multiprocessing import Pool, Manager, cpu_count, freeze_support
 from functools import wraps
 
 import numpy as np
@@ -503,4 +503,10 @@ def main(args=[],app=None):
 
 def mainargv():
 	'''setuptools compatible entry point.'''
+<<<<<<< HEAD
 	main(sys.argv)
+=======
+	freeze_support()
+	sys.exit(main(sys.argv))
+	
+>>>>>>> Version update

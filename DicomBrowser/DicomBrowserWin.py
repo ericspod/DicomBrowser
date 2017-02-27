@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'res/DicomBrowserWin.ui'
 #
-# Created: Mon Jan 23 16:13:34 2017
+# Created: Mon Feb 27 15:32:05 2017
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!

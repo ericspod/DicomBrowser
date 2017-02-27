@@ -18,7 +18,7 @@
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
 from setuptools import setup
-import subprocess, sys, platform, os, glob
+import subprocess, sys, platform, os, glob, shutil
 from DicomBrowser import __appname__, __version__
 
 if platform.system().lower()=='darwin':
@@ -51,8 +51,8 @@ if 'app' in sys.argv:
 		icon='-i res/icon.png' # does this even work?
 		
 	# multiprocessing has issues with Windows one-file packages (see https://github.com/pyinstaller/pyinstaller/wiki/Recipe-Multiprocessing)
-	if plat!='win':
-		flags+='F'
+#	if plat!='win':
+#		flags+='F'
 	
 	paths=' '.join('-p %s'%p for p in paths)
 	hidden=' '.join('--hidden-import %s'%h for h in hidden)
@@ -67,6 +67,11 @@ if 'app' in sys.argv:
 	elif plat=='win':
 		for f in glob.glob('dist/%s/mkl_*.dll'%appname): # remove unnecessary MKL libraries
 			os.remove(f)
+	else:
+		#rm -rf libstdc++.so.6 libglib-2.0.so.0 libgobject-2.0.so.0 libgpg-error.so.0 share/icons
+		shutil.rmtree('dist/%s/share/icons'%appname)
+		for f in ['libstdc++.so.6','libglib-2.0.so.0','libgobject-2.0.so.0','libgpg-error.so.0']:
+			os.remove('dist/%s/%s'%(appname,f))
 	
 	sys.exit(0) # quit at this point to only create the app file
 	
