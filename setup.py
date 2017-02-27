@@ -68,7 +68,6 @@ if 'app' in sys.argv:
 		for f in glob.glob('dist/%s/mkl_*.dll'%appname): # remove unnecessary MKL libraries
 			os.remove(f)
 	else:
-		#rm -rf libstdc++.so.6 libglib-2.0.so.0 libgobject-2.0.so.0 libgpg-error.so.0 share/icons
 		shutil.rmtree('dist/%s/share/icons'%appname)
 		for f in ['libstdc++.so.6','libglib-2.0.so.0','libgobject-2.0.so.0','libgpg-error.so.0']:
 			os.remove('dist/%s/%s'%(appname,f))

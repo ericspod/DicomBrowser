@@ -503,10 +503,5 @@ def main(args=[],app=None):
 
 def mainargv():
 	'''setuptools compatible entry point.'''
-<<<<<<< HEAD
-	main(sys.argv)
-=======
 	freeze_support()
 	sys.exit(main(sys.argv))
-	
->>>>>>> Version update
