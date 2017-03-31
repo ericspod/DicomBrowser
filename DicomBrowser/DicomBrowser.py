@@ -1,5 +1,3 @@
-#! /usr/bin/env python
-
 # DicomBrowser
 # Copyright (C) 2016 Eric Kerfoot, King's College London, all rights reserved
 # 
@@ -30,6 +28,7 @@ import numpy as np
 from PyQt4 import QtGui, QtCore
 from PyQt4.QtCore import Qt
 from DicomBrowserWin import Ui_DicomBrowserWin
+from .__init__ import __version__
 
 scriptdir= os.path.dirname(os.path.abspath(__file__)) # path of the current file
 
@@ -122,6 +121,8 @@ def fillTagModel(model,dcm):
 			if isinstance(value,str):
 				try:
 					value=value.decode('ascii')
+					if '\n' in value or '\r' in value: # multiline text data should be shown as repr
+						value=repr(value)
 				except:
 					value=repr(value)
 					
@@ -337,6 +338,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 	def __init__(self,args,parent=None):
 		QtGui.QMainWindow.__init__(self,parent)
 		self.setupUi(self)
+		
+		self.setWindowTitle('DicomBrowser v%s (FOR RESEARCH ONLY)'%(__version__))
 		
 		self.importButton.clicked.connect(self._openDirDialog)
 		self.statusSignal.connect(self.setStatus)

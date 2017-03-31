@@ -27,15 +27,20 @@ elif platform.system().lower()=='windows':
 	plat='win'
 else:
 	plat='linux'
+	
 
-# generate source files
-subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc.py', shell=True)
-subprocess.check_call('python -m PyQt4.uic.pyuic res/DicomBrowserWin.ui > DicomBrowser/DicomBrowserWin.py', shell=True)
+long_description='''
+This is a lightweight portable Dicom browser application written in Python. It allows Dicom directories to be loaded, 
+images and tag data viewed, and not much else aside. This is intended to be a cross-platform utility suitable for 
+previewing Dicom data rather than doing any sort of processing.
+'''
+
 
 if 'generate' in sys.argv: # generate only, quit at this point before setup
-	sys.exit(0)
-		
-if 'app' in sys.argv:
+	# generate source files
+	subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc.py', shell=True)
+	subprocess.check_call('python -m PyQt4.uic.pyuic res/DicomBrowserWin.ui > DicomBrowser/DicomBrowserWin.py', shell=True)
+elif 'app' in sys.argv:
 	sys.argv.remove('app')
 	appname='%s_%s'%(__appname__,__version__)
 	icon='res/icon.icns' if platform.system().lower()=='darwin' else 'res/icon.ico'
@@ -71,26 +76,18 @@ if 'app' in sys.argv:
 		shutil.rmtree('dist/%s/share/icons'%appname)
 		for f in ['libstdc++.so.6','libglib-2.0.so.0','libgobject-2.0.so.0','libgpg-error.so.0']:
 			os.remove('dist/%s/%s'%(appname,f))
-	
-	sys.exit(0) # quit at this point to only create the app file
-	
-	
-long_description='''
-This is a lightweight portable Dicom browser application written in Python. It allows Dicom directories to be loaded, 
-images and tag data viewed, and not much else aside. This is intended to be a cross-platform utility suitable for 
-previewing Dicom data rather than doing any sort of processing.
-'''
-	
-setup(
-	name = __appname__,
-	version = __version__,
-	packages=['DicomBrowser'],
-	author='Eric Kerfoot',
-	author_email="eric.kerfoot@kcl.ac.uk",
-	url="http://github.com/ericspod/DicomBrowser",
-	license="GPLv3",
-	description='Lightweight portable DICOM viewer with interface for images and tags',
-	keywords="dicom python medical imaging pydicom pyqtgraph",
-	long_description=long_description.strip(),
-	entry_points={ 'console_scripts': ['DicomBrowser = DicomBrowser:mainargv'] }
-)
+else:
+	setup(
+		name = __appname__,
+		version = __version__,
+		packages=['DicomBrowser'],
+		author='Eric Kerfoot',
+		author_email="eric.kerfoot@kcl.ac.uk",
+		url="http://github.com/ericspod/DicomBrowser",
+		license="GPLv3",
+		description='Lightweight portable DICOM viewer with interface for images and tags',
+		keywords="dicom python medical imaging pydicom pyqtgraph",
+		long_description=long_description.strip(),
+		entry_points={ 'console_scripts': ['DicomBrowser = DicomBrowser:mainargv'] },
+		install_requires=['pyqtgraph','pydicom']
+	)
