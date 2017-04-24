@@ -273,7 +273,7 @@ class DicomSeries(object):
 					rslope=float(dcm.get('RescaleSlope',1))
 					rinter=float(dcm.get('RescaleIntercept',0))
 					img= dcm.pixel_array*rslope+rinter
-			except:
+			except Exception as e:
 				pass
 				
 			self.imgcache[index]=img
