@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>792</width>
-    <height>752</height>
+    <width>769</width>
+    <height>607</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -190,28 +190,27 @@
       </widget>
       <widget class="QWidget" name="verticalLayoutWidget">
        <layout class="QVBoxLayout" name="verticalLayout">
+        <property name="spacing">
+         <number>32</number>
+        </property>
         <property name="topMargin">
          <number>0</number>
         </property>
         <item>
-         <widget class="QTabWidget" name="seriesTab">
-          <property name="tabPosition">
-           <enum>QTabWidget::North</enum>
+         <widget class="QSplitter" name="splitter">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
-          <property name="tabShape">
-           <enum>QTabWidget::Rounded</enum>
-          </property>
-          <property name="currentIndex">
-           <number>0</number>
-          </property>
-          <property name="documentMode">
-           <bool>false</bool>
-          </property>
-          <widget class="QWidget" name="metaTab">
-           <attribute name="title">
+          <widget class="QGroupBox" name="view2DGroup">
+           <property name="title">
+            <string>2D View</string>
+           </property>
+          </widget>
+          <widget class="QGroupBox" name="metadataGroup">
+           <property name="title">
             <string>Metadata</string>
-           </attribute>
-           <layout class="QGridLayout" name="gridLayout_4">
+           </property>
+           <layout class="QGridLayout" name="gridLayout_5">
             <item row="0" column="0">
              <widget class="QTreeView" name="tagView">
               <property name="verticalScrollBarPolicy">

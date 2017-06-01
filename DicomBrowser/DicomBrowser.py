@@ -20,12 +20,15 @@ import sys, os, threading, math
 from operator import itemgetter
 from Queue import Queue, Empty
 from multiprocessing import Pool, Manager, cpu_count, freeze_support
+from contextlib import closing
+from StringIO import StringIO
+import re
 
 import numpy as np
 
-from PyQt4 import QtGui, QtCore
+from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import Qt
-from DicomBrowserWin import Ui_DicomBrowserWin
+#from DicomBrowserWin import Ui_DicomBrowserWin
 from .__init__ import __version__
 
 scriptdir= os.path.dirname(os.path.abspath(__file__)) # path of the current file
@@ -40,6 +43,15 @@ import pyqtgraph as pg
 from pydicom.dicomio import read_file
 from pydicom.datadict import DicomDictionary
 from pydicom.errors import InvalidDicomError
+
+
+import Resources_rc
+
+with closing(QtCore.QFile(':/layout/DicomBrowserWin.ui')) as layout:
+    layout.open(QtCore.QFile.ReadOnly)
+    s=str(layout.readAll())
+    s=re.sub('<resources>.*</resources>','',s,flags=re.DOTALL) # get rid of the resources section in the XML
+    Ui_DicomBrowserWin=uic.loadUiType(StringIO(s))[0]
 
 
 # tag names of default columns in the series list, this can be changed to pull out different tag names for columns
@@ -320,6 +332,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
     def __init__(self,args,parent=None):
         QtGui.QMainWindow.__init__(self,parent)
+        
         self.setupUi(self)
         
         self.setWindowTitle('DicomBrowser v%s (FOR RESEARCH ONLY)'%(__version__))
@@ -356,8 +369,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         self.imageSlider.valueChanged.connect(self.setSeriesImage)
 
         self.imageview=pg.ImageView()
-        self.seriesTab.insertTab(0,self.imageview,'2D View')
-        self.seriesTab.setCurrentIndex(0)
+        layout=QtGui.QGridLayout(self.view2DGroup)
+        layout.addWidget(self.imageview)
         
         # load the empty image placeholder into a ndarray
         qimg=QtGui.QImage(':/icons/noimage.png')

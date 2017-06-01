@@ -17,7 +17,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-from DicomBrowser import *
+#from DicomBrowser import *
 
 __appname__='DicomBrowser'
 __version_info__=(1,1,0) # global application version, major/minor/patch

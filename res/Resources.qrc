@@ -8,4 +8,7 @@
   <qresource prefix="css">
     <file>DefaultUIStyle.css</file>
   </qresource>
+  <qresource prefix="layout">
+    <file>DicomBrowserWin.ui</file>
+  </qresource>
 </RCC>

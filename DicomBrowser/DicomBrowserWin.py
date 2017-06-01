@@ -2,7 +2,7 @@
 
 # Form implementation generated from reading ui file 'res/DicomBrowserWin.ui'
 #
-# Created: Thu Mar  9 15:21:00 2017
+# Created: Thu Jun  1 20:30:36 2017
 #      by: PyQt4 UI code generator 4.10.4
 #
 # WARNING! All changes made in this file will be lost!
@@ -26,7 +26,7 @@ except AttributeError:
 class Ui_DicomBrowserWin(object):
     def setupUi(self, DicomBrowserWin):
         DicomBrowserWin.setObjectName(_fromUtf8("DicomBrowserWin"))
-        DicomBrowserWin.resize(792, 752)
+        DicomBrowserWin.resize(769, 607)
         icon = QtGui.QIcon()
         icon.addPixmap(QtGui.QPixmap(_fromUtf8(":/icons/icon.png")), QtGui.QIcon.Normal, QtGui.QIcon.Off)
         DicomBrowserWin.setWindowIcon(icon)
@@ -105,19 +105,19 @@ class Ui_DicomBrowserWin(object):
         self.verticalLayoutWidget = QtGui.QWidget(self.seriesSplit)
         self.verticalLayoutWidget.setObjectName(_fromUtf8("verticalLayoutWidget"))
         self.verticalLayout = QtGui.QVBoxLayout(self.verticalLayoutWidget)
+        self.verticalLayout.setSpacing(32)
         self.verticalLayout.setContentsMargins(-1, 0, -1, -1)
         self.verticalLayout.setObjectName(_fromUtf8("verticalLayout"))
-        self.seriesTab = QtGui.QTabWidget(self.verticalLayoutWidget)
-        self.seriesTab.setTabPosition(QtGui.QTabWidget.North)
-        self.seriesTab.setTabShape(QtGui.QTabWidget.Rounded)
-        self.seriesTab.setDocumentMode(False)
-        self.seriesTab.setObjectName(_fromUtf8("seriesTab"))
-        self.metaTab = QtGui.QWidget()
-        self.metaTab.setObjectName(_fromUtf8("metaTab"))
-        self.gridLayout_4 = QtGui.QGridLayout(self.metaTab)
-        self.gridLayout_4.setMargin(0)
-        self.gridLayout_4.setObjectName(_fromUtf8("gridLayout_4"))
-        self.tagView = QtGui.QTreeView(self.metaTab)
+        self.splitter = QtGui.QSplitter(self.verticalLayoutWidget)
+        self.splitter.setOrientation(QtCore.Qt.Horizontal)
+        self.splitter.setObjectName(_fromUtf8("splitter"))
+        self.view2DGroup = QtGui.QGroupBox(self.splitter)
+        self.view2DGroup.setObjectName(_fromUtf8("view2DGroup"))
+        self.metadataGroup = QtGui.QGroupBox(self.splitter)
+        self.metadataGroup.setObjectName(_fromUtf8("metadataGroup"))
+        self.gridLayout_5 = QtGui.QGridLayout(self.metadataGroup)
+        self.gridLayout_5.setObjectName(_fromUtf8("gridLayout_5"))
+        self.tagView = QtGui.QTreeView(self.metadataGroup)
         self.tagView.setVerticalScrollBarPolicy(QtCore.Qt.ScrollBarAlwaysOn)
         self.tagView.setEditTriggers(QtGui.QAbstractItemView.NoEditTriggers)
         self.tagView.setProperty("showDropIndicator", False)
@@ -127,9 +127,8 @@ class Ui_DicomBrowserWin(object):
         self.tagView.setTextElideMode(QtCore.Qt.ElideRight)
         self.tagView.setSortingEnabled(True)
         self.tagView.setObjectName(_fromUtf8("tagView"))
-        self.gridLayout_4.addWidget(self.tagView, 0, 0, 1, 1)
-        self.seriesTab.addTab(self.metaTab, _fromUtf8(""))
-        self.verticalLayout.addWidget(self.seriesTab)
+        self.gridLayout_5.addWidget(self.tagView, 0, 0, 1, 1)
+        self.verticalLayout.addWidget(self.splitter)
         self.horizontalLayout = QtGui.QHBoxLayout()
         self.horizontalLayout.setContentsMargins(-1, 0, -1, -1)
         self.horizontalLayout.setObjectName(_fromUtf8("horizontalLayout"))
@@ -164,7 +163,6 @@ class Ui_DicomBrowserWin(object):
         self.action_Open_Directory.setObjectName(_fromUtf8("action_Open_Directory"))
 
         self.retranslateUi(DicomBrowserWin)
-        self.seriesTab.setCurrentIndex(0)
         QtCore.QMetaObject.connectSlotsByName(DicomBrowserWin)
 
     def retranslateUi(self, DicomBrowserWin):
@@ -173,7 +171,8 @@ class Ui_DicomBrowserWin(object):
         self.importButton.setText(_translate("DicomBrowserWin", "Import...", None))
         self.statusProgressBar.setFormat(_translate("DicomBrowserWin", "%p% (%v / %m)", None))
         self.seriesGroup.setTitle(_translate("DicomBrowserWin", "Series", None))
-        self.seriesTab.setTabText(self.seriesTab.indexOf(self.metaTab), _translate("DicomBrowserWin", "Metadata", None))
+        self.view2DGroup.setTitle(_translate("DicomBrowserWin", "2D View", None))
+        self.metadataGroup.setTitle(_translate("DicomBrowserWin", "Metadata", None))
         self.numLabel.setText(_translate("DicomBrowserWin", "0", None))
         self.autoLevelsCheck.setText(_translate("DicomBrowserWin", "Auto Levels", None))
         self.action_Quit.setText(_translate("DicomBrowserWin", "&Quit", None))
