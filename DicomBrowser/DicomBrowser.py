@@ -16,12 +16,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-import sys, os, threading, time, pickle, math
+import sys, os, threading, math
 from operator import itemgetter
-from collections import OrderedDict
 from Queue import Queue, Empty
 from multiprocessing import Pool, Manager, cpu_count, freeze_support
-from functools import wraps
 
 import numpy as np
 
@@ -66,27 +64,6 @@ keywordNameMap.update(extraKeywords)
 
 fullNameMap={v:k for k,v in keywordNameMap.items()} # maps full names to keywords
 
-
-def enumAllFiles(rootdir):
-    '''Yields all absolute path regular files in the given directory.'''
-    for root, dirs, files in os.walk(rootdir):
-        for f in sorted(files):
-            yield os.path.join(root,f)
-
-
-def avgspan(vals):
-    '''Returns the average difference between successive values derived from the given iterable.'''
-    return np.average([b-a for a,b in zip(vals,vals[1:])])
-    
-    
-def clamp(val,minv,maxv):
-    '''Returns minv if val<minv, maxv if val>maxv, otherwise val.'''
-    if val>maxv:
-        return maxv
-    if val<minv:
-        return minv
-    return val
-    
 
 def partitionSequence(maxval,part,numparts):
     '''
@@ -168,10 +145,14 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
     objects, and the total number to load. A status string of '' indicates loading is done. The default value causes 
     no status indication to be made. Return value is a sequence of DicomSeries objects in no particular order.
     '''
+    allfiles=[]
+    for root,_,files in os.walk(rootdir):
+        allfiles+=[os.path.join(root,f) for f in files]
+        
     numprocs=numprocs or cpu_count()
     m = Manager()
     queue=m.Queue()
-    allfiles=list(enumAllFiles(rootdir))
+#    allfiles=list(enumAllFiles(rootdir))
     numfiles=len(allfiles)
     res=[]
     series={}
@@ -273,7 +254,7 @@ class DicomSeries(object):
                     rslope=float(dcm.get('RescaleSlope',1))
                     rinter=float(dcm.get('RescaleIntercept',0))
                     img= dcm.pixel_array*rslope+rinter
-            except Exception as e:
+            except Exception:
                 pass
                 
             self.imgcache[index]=img
@@ -294,7 +275,9 @@ class DicomSeries(object):
         else:
             if len(times)==1:
                 times=times*2
-            return times[0],avgspan(times),len(times)
+            
+            avgspan=np.average([b-a for a,b in zip(times,times[1:])])
+            return times[0],avgspan,len(times)
 
 
 class SeriesTableModel(QtCore.QAbstractTableModel):
@@ -437,7 +420,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
             rowvals=self.seriesTable[self.selectedRow]
             series=self.seriesMap[rowvals]
             maxindex=len(series.filenames)-1
-            i=clamp(i,0,maxindex)
+            i=np.clip(i,0,maxindex)
             interval=1
             
             if maxindex>=5000:
@@ -452,6 +435,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
             img=series.getPixelData(i)
             if img is None:
                 img=self.noimg
+            elif len(img.shape)==3: # average channels on a multi-channel image
+                img=np.mean(img,axis=2)
 
             self.imageview.setImage(img.T,autoRange=autoRange,autoLevels=self.autoLevelsCheck.isChecked())
             
