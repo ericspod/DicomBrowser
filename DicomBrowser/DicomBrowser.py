@@ -28,7 +28,7 @@ import numpy as np
 
 from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import Qt
-from .__init__ import __version__
+from __init__ import __version__
 
 scriptdir= os.path.dirname(os.path.abspath(__file__)) # path of the current file
 
@@ -562,3 +562,7 @@ def mainargv():
     '''setuptools compatible entry point.'''
     freeze_support()
     sys.exit(main(sys.argv))
+
+if __name__=='__main__':
+    mainargv()
+    
