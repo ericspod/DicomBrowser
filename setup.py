@@ -37,9 +37,8 @@ previewing Dicom data rather than doing any sort of processing.
 
 
 if 'generate' in sys.argv: # generate only, quit at this point before setup
-    # generate source files
-    subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc.py', shell=True)
-    subprocess.check_call('python -m PyQt4.uic.pyuic res/DicomBrowserWin.ui > DicomBrowser/DicomBrowserWin.py', shell=True)
+    # generate resource file
+    subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc4.py', shell=True)
 elif 'app' in sys.argv:
     sys.argv.remove('app')
     appname='%s_%s'%(__appname__,__version__)
