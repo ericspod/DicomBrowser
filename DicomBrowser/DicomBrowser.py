@@ -16,13 +16,13 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-import sys, os, threading, math
+import sys, os, threading, math, re
 from operator import itemgetter
 from Queue import Queue, Empty
 from multiprocessing import Pool, Manager, cpu_count, freeze_support
 from contextlib import closing
 from StringIO import StringIO
-import re
+from collections import OrderedDict
 
 import numpy as np
 
@@ -74,13 +74,6 @@ keywordNameMap={v[4]:v[2] for v in DicomDictionary.values()}
 keywordNameMap.update(extraKeywords)
 
 fullNameMap={v:k for k,v in keywordNameMap.items()} # maps full names to keywords
-
-
-def tableResize(table):
-    '''Resizes table columns to contents, setting the last section to stretch.'''
-    table.horizontalHeader().setStretchLastSection(False)
-    table.resizeColumnsToContents()
-    table.horizontalHeader().setStretchLastSection(True)
 
         
 def fillTagModel(model,dcm,regex=None):
@@ -298,9 +291,9 @@ class DicomSeries(object):
 
 class SeriesTableModel(QtCore.QAbstractTableModel):
     '''This manages the list of series with a sorting feature.'''
-    def __init__(self, seriesTable, seriesColumns,parent=None):
+    def __init__(self, seriesColumns,parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
-        self.seriesTable=seriesTable
+        self.seriesTable=[]
         self.seriesColumns=seriesColumns
         self.sortCol=0
         self.sortOrder=Qt.AscendingOrder
@@ -318,9 +311,13 @@ class SeriesTableModel(QtCore.QAbstractTableModel):
 
         self.seriesTable.sort(key=itemgetter(column),reverse=order==Qt.DescendingOrder)
         self.layoutChanged.emit()
-
-    def resort(self):
-        self.sort(self.sortCol,self.sortOrder)
+        
+    def updateSeriesTable(self,seriesTable):
+        self.seriesTable=list(seriesTable)
+        self.sort(self.sortCol,self.sortOrder) # sort using existing parameters
+        
+    def getRow(self,i):
+        return self.seriesTable[i]
 
     def headerData(self, section, orientation, role):
         if role == Qt.DisplayRole and orientation==Qt.Horizontal:
@@ -343,8 +340,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
         self.srclist=[] # list of source directories
         self.imageIndex=0 # index of selected image
-        self.seriesTable=[] # list of loaded series, equals self.seriesMap.keys() but in a sorted ordering
-        self.seriesMap={} # maps series table entry to DicomSeries object it was generated from
+        self.seriesMap=OrderedDict() # maps series table row tuples to DicomSeries object it was generated from
         self.seriesColumns=list(seriesListColumns) # keywords for columns
         self.selectedRow=-1 # selected series row
         self.lastDir='.' # last loaded directory root
@@ -370,8 +366,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
         # setup the list and table models
         self.srcmodel=QtGui.QStringListModel()
-        self.seriesmodel=SeriesTableModel(self.seriesTable,self.seriesColumns,self)
-        self.seriesmodel.layoutChanged.connect(lambda:tableResize(self.seriesView))
+        self.seriesmodel=SeriesTableModel(self.seriesColumns)
+        self.seriesmodel.layoutChanged.connect(self._seriesTableResize)
         self.tagmodel=QtGui.QStandardItemModel()
 
         # assign models to views
@@ -434,26 +430,30 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
     def _updateSeriesTable(self):
         '''
-        Updates the self.seriesTable and self.seriesMap objects, and refills the self.srcmodel object. This will refresh 
+        Updates the self.seriesMap object from self.srclist, and refills the self.srcmodel object. This will refresh 
         the list of source directories and the table of available series.
         '''
-        del self.seriesTable[:]
         self.seriesMap.clear()
 
-        for _,series in self.srclist: # add each series in each source into the self.seriesMap and self.seriesTable objects
+        for _,series in self.srclist: # add each series in each source into self.seriesMap 
             for s in series:
                 entry=s.getTagValues(self.seriesColumns)
                 self.seriesMap[entry]=s
-                self.seriesTable.append(entry)
 
         self.srcmodel.setStringList([s[0] for s in self.srclist])
-        #self.seriesmodel.modelReset.emit()
+        self.seriesmodel.updateSeriesTable(self.seriesMap.keys())
         self.seriesmodel.layoutChanged.emit()
 
     def _seriesTableClicked(self,item):
         '''Called when a series is clicked on, set the viewed image to be from the clicked series.'''
         self.selectedRow=item.row()
         self.setSeriesImage(self.imageSlider.value(),True)
+        
+    def _seriesTableResize(self):
+        '''Resizes self.seriesView columns to contents, setting the last section to stretch.'''
+        self.seriesView.horizontalHeader().setStretchLastSection(False)
+        self.seriesView.resizeColumnsToContents()
+        self.seriesView.horizontalHeader().setStretchLastSection(True)
             
     def _setFilterString(self,regex):
         '''Set the filtering regex to be `regex'.'''
@@ -473,9 +473,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         
     def getSelectedSeries(self):
         '''Returns the DicomSeries object for the selected series, None if no series is selected.'''
-        if 0<=self.selectedRow<len(self.seriesTable):
-            rowvals=self.seriesTable[self.selectedRow]
-            return self.seriesMap[rowvals]
+        if 0<=self.selectedRow<len(self.seriesMap):
+            return self.seriesMap[self.seriesmodel.getRow(self.selectedRow)]
 
     def setSeriesImage(self,i,autoRange=False):
         '''
@@ -505,6 +504,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
             self.imageSlider.setTickInterval(interval)
             self.imageSlider.setMaximum(maxindex)
             self.numLabel.setText(str(self.imageIndex))
+            self.view2DGroup.setTitle('2D View - '+series.filenames[self.imageIndex])
             
     def setStatus(self,msg,progress=0,progressmax=0):
         '''
@@ -562,6 +562,7 @@ def mainargv():
     '''setuptools compatible entry point.'''
     freeze_support()
     sys.exit(main(sys.argv))
+
 
 if __name__=='__main__':
     mainargv()
