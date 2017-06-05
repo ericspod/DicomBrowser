@@ -158,7 +158,6 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
     numprocs=numprocs or cpu_count()
     m = Manager()
     queue=m.Queue()
-#    allfiles=list(enumAllFiles(rootdir))
     numfiles=len(allfiles)
     res=[]
     series={}
@@ -167,11 +166,7 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
     if not numfiles:
         return []
 
-    statusfunc('Loading DICOM files',0,0)
-    
-    try:
-        pool=Pool(processes=numprocs)
-        
+    with closing(Pool(processes=numprocs)) as pool:
         for i in range(numprocs):
             # partition the list of files amongst each processor
             partsize=numfiles/float(numprocs)
@@ -199,10 +194,8 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
                     statusfunc('Loading DICOM files',count,numfiles)
             except Empty: # from queue.get(), keep trying so long as the loop condition is true
                 pass
-    finally:
-        pool.close()
-        statusfunc('',0,0)
-
+        
+    statusfunc('',0,0)
     return list(series.values())
     
 
