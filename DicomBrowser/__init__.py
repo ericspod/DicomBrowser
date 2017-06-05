@@ -1,6 +1,6 @@
 
 # DicomBrowser
-# Copyright (C) 2016 Eric Kerfoot, King's College London, all rights reserved
+# Copyright (C) 2016-7 Eric Kerfoot, King's College London, all rights reserved
 # 
 # This file is part of DicomBrowser.
 #
@@ -23,5 +23,5 @@ __appname__='DicomBrowser'
 __version_info__=(1,2,0) # global application version, major/minor/patch
 __version__='%i.%i.%i'%__version_info__
 __author__='Eric Kerfoot'
-__copyright__="Copyright (c) 2016 Eric Kerfoot, King's College London, all rights reserved. Licensed under the GPL (see LICENSE.txt)."
+__copyright__="Copyright (c) 2016-7 Eric Kerfoot, King's College London, all rights reserved. Licensed under the GPL (see LICENSE.txt)."
 

@@ -1,5 +1,5 @@
 # DicomBrowser
-# Copyright (C) 2016 Eric Kerfoot, King's College London, all rights reserved
+# Copyright (C) 2016-7 Eric Kerfoot, King's College London, all rights reserved
 # 
 # This file is part of DicomBrowser.
 #
@@ -18,17 +18,19 @@
 
 import sys, os, threading, math, re
 from operator import itemgetter
-from Queue import Queue, Empty
 from multiprocessing import Pool, Manager, cpu_count, freeze_support
 from contextlib import closing
-from StringIO import StringIO
 from collections import OrderedDict
 
-import numpy as np
+try: # Python 2 and 3 support
+    from Queue import Queue, Empty
+    from StringIO import StringIO
+except:
+    from queue import Queue, Empty
+    from io import StringIO
 
 from PyQt4 import QtGui, QtCore, uic
 from PyQt4.QtCore import Qt
-from __init__ import __version__
 
 scriptdir= os.path.dirname(os.path.abspath(__file__)) # path of the current file
 
@@ -37,12 +39,11 @@ if os.path.isdir(scriptdir+'/../pydicom'):
     sys.path.append(scriptdir+'/../pydicom')
     sys.path.append(scriptdir+'/../pyqtgraph')
 
+import numpy as np
 import pyqtgraph as pg
+from pydicom import dicomio, datadict, errors
 
-from pydicom.dicomio import read_file
-from pydicom.datadict import DicomDictionary
-from pydicom.errors import InvalidDicomError
-
+from __init__ import __version__
 import Resources_rc4 # import resources manually since we have to do this to get the ui file
 
 # load the ui file from the resource, removing the "resources" tag so that uic doesn't try (and fail) to load the resources
@@ -70,7 +71,7 @@ extraKeywords={
 }
 
 # maps keywords to their full names
-keywordNameMap={v[4]:v[2] for v in DicomDictionary.values()}
+keywordNameMap={v[4]:v[2] for v in datadict.DicomDictionary.values()}
 keywordNameMap.update(extraKeywords)
 
 fullNameMap={v:k for k,v in keywordNameMap.items()} # maps full names to keywords
@@ -91,8 +92,9 @@ def fillTagModel(model,dcm,regex=None):
         '''Add every element in `d' to the QStandardItem object `parent', this will be recursive for list elements.'''
         for elem in d:
             value=_elemToValue(elem)
+            tag='(%04x, %04x)'%(elem.tag.group,elem.tag.elem)
             parent1 = QtGui.QStandardItem(str(elem.name))
-            tagitem = QtGui.QStandardItem('(%04x, %04x)'%(elem.tag.group,elem.tag.elem))
+            tagitem = QtGui.QStandardItem(tag)
             
             if isinstance(value,str):
                 try:
@@ -102,7 +104,7 @@ def fillTagModel(model,dcm,regex=None):
                 except:
                     value=repr(value)
                     
-                if matches(str(elem.name)+value):
+                if matches(str(elem.name)+tag+value):
                     parent.appendRow([parent1,tagitem,QtGui.QStandardItem(value)])
                     
             elif value is not None and len(value)>0:
@@ -116,7 +118,8 @@ def fillTagModel(model,dcm,regex=None):
         if elem.VR=='SQ':
             value=[]
             for i,item in enumerate(elem):
-                if matches(str(elem.name)):
+                tag='(%04x, %04x)'%(elem.tag.group,elem.tag.elem)
+                if matches(str(elem.name)+tag):
                     parent1 = QtGui.QStandardItem('%s %i'%(elem.name,i))
                     _datasetToItem(parent1,item)
                     value.append(parent1)
@@ -132,10 +135,10 @@ def loadDicomFiles(filenames,queue):
     '''Load the Dicom files `filenames' and put an abbreviated tag->value map for each onto `queue'.'''
     for filename in filenames:
         try:
-            dcm=read_file(filename,stop_before_pixels=True)
+            dcm=dicomio.read_file(filename,stop_before_pixels=True)
             tags={t:dcm.get(t) for t in loadTags if t in dcm}
             queue.put((filename,tags))
-        except InvalidDicomError:
+        except errors.InvalidDicomError:
             pass
 
 
@@ -200,7 +203,7 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
         pool.close()
         statusfunc('',0,0)
 
-    return series.values()
+    return list(series.values())
     
 
 class DicomSeries(object):
@@ -225,7 +228,7 @@ class DicomSeries(object):
     def getTagObject(self,index):
         '''Get the object storing tag information from Dicom file at the given index.'''
         if index not in self.tagcache:
-            dcm=read_file(self.filenames[index],stop_before_pixels=True)
+            dcm=dicomio.read_file(self.filenames[index],stop_before_pixels=True)
             self.tagcache[index]=dcm
             
         return self.tagcache[index]
@@ -258,7 +261,7 @@ class DicomSeries(object):
         if index not in self.imgcache:
             img=None
             try:
-                dcm=read_file(self.filenames[index])
+                dcm=dicomio.read_file(self.filenames[index])
                 if dcm.pixel_array is not None:
                     rslope=float(dcm.get('RescaleSlope',1))
                     rinter=float(dcm.get('RescaleIntercept',0))
@@ -392,7 +395,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
     def keyPressEvent(self,e):
         '''Close the window if escape is pressed, otherwise do as inherited.'''
-        if e.key() == QtCore.Qt.Key_Escape:
+        if e.key() == Qt.Key_Escape:
             self.close()
         else:
             QtGui.QMainWindow.keyPressEvent(self,e)
