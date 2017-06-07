@@ -3,7 +3,6 @@
 http://qt-project.org/doc/qt-4.8/stylesheet-reference.html
 http://qt-project.org/doc/qt-4.7/stylesheet-examples.html
 
-change stylesheet in console: mgr.callThreadSafe(getUIApp().setStyleSheet,open('res/DefaultUIStyle.css').read()) 
 */
 
 QWidget {
@@ -26,6 +25,15 @@ QAbstractItemView {
 QTextEdit,QLineEdit,QPlainTextEdit {
 	color: #000;
 	background-color: rgb(200, 200, 200);
+}
+
+QHeaderView::section {
+    background-color: qlineargradient(x1:0, y1:0, x2:0, y2:1,
+                                      stop:0 #616161, stop: 0.5 #505050,
+                                      stop: 0.6 #434343, stop:1 #656565);
+    color: white;
+    padding-left: 0px;
+    border: 1px solid rgb(120, 120, 120);
 }
 
 QPushButton, QSpinBox, QDoubleSpinBox,QComboBox {

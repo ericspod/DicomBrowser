@@ -29,9 +29,17 @@ except:
     from queue import Queue, Empty
     from io import StringIO
 
-from PyQt4 import QtGui, QtCore, uic
-from PyQt4.QtCore import Qt
-
+try: # PyQt4 and 5 support
+    from PyQt4 import QtGui, QtCore, uic
+    from PyQt4.QtCore import Qt
+    from PyQt4.QtGui import QStringListModel
+    from . import Resources_rc4 # import resources manually since we have to do this to get the ui file
+except:
+    from PyQt5 import QtGui, QtCore, uic
+    from PyQt5.QtCore import Qt,QStringListModel
+    from . import Resources_rc5 # import resources manually since we have to do this to get the ui file
+    
+	
 scriptdir= os.path.dirname(os.path.abspath(__file__)) # path of the current file
 
 # this allows the script to be run directly from the repository without having to install pydicom or pyqtgraph
@@ -43,13 +51,13 @@ import numpy as np
 import pyqtgraph as pg
 from pydicom import dicomio, datadict, errors
 
-from __init__ import __version__
-import Resources_rc4 # import resources manually since we have to do this to get the ui file
+from .__init__ import __version__
+
 
 # load the ui file from the resource, removing the "resources" tag so that uic doesn't try (and fail) to load the resources
 with closing(QtCore.QFile(':/layout/DicomBrowserWin.ui')) as layout:
     if layout.open(QtCore.QFile.ReadOnly):
-        s=str(layout.readAll())
+        s=bytes(layout.readAll()).decode('utf-8')
         s=re.sub('<resources>.*</resources>','',s,flags=re.DOTALL) # get rid of the resources section in the XML
         Ui_DicomBrowserWin,_=uic.loadUiType(StringIO(s)) # create a local type definition
 
@@ -84,10 +92,6 @@ def fillTagModel(model,dcm,regex=None):
     except:
         regex='' # no regex or bad pattern
             
-    def matches(val):
-        '''Returns True if `val' matches the supplied pattern or if no pattern is given.'''
-        return not regex or re.search(regex,val) is not None
-
     def _datasetToItem(parent,d):
         '''Add every element in `d' to the QStandardItem object `parent', this will be recursive for list elements.'''
         for elem in d:
@@ -104,7 +108,7 @@ def fillTagModel(model,dcm,regex=None):
                 except:
                     value=repr(value)
                     
-                if matches(str(elem.name)+tag+value):
+                if not regex or re.search(regex,str(elem.name)+tag+value) is not None:
                     parent.appendRow([parent1,tagitem,QtGui.QStandardItem(value)])
                     
             elif value is not None and len(value)>0:
@@ -118,10 +122,9 @@ def fillTagModel(model,dcm,regex=None):
         if elem.VR=='SQ':
             value=[]
             for i,item in enumerate(elem):
-                tag='(%04x, %04x)'%(elem.tag.group,elem.tag.elem)
-                if matches(str(elem.name)+tag):
-                    parent1 = QtGui.QStandardItem('%s %i'%(elem.name,i))
-                    _datasetToItem(parent1,item)
+                parent1 = QtGui.QStandardItem('%s %i'%(elem.name,i))
+                _datasetToItem(parent1,item)
+                if not regex or parent1.hasChildren(): # discard sequences whose children have been filtered out
                     value.append(parent1)
         elif elem.name!='Pixel Data':
             value=str(elem.value)
@@ -190,7 +193,7 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
                 count+=1
                 
                 # update status only 100 times, doing it too frequently really slows things down
-                if numfiles<100 or count%(numfiles/100)==0: 
+                if numfiles<100 or count%(numfiles//100)==0: 
                     statusfunc('Loading DICOM files',count,numfiles)
             except Empty: # from queue.get(), keep trying so long as the loop condition is true
                 pass
@@ -330,6 +333,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
     inherits from the type loaded from the .ui file in the resources. 
     '''
     statusSignal=QtCore.pyqtSignal(str,int,int) # signal for updating the status bar asynchronously
+    updateSignal=QtCore.pyqtSignal() # signal for updating the source list and series table
 
     def __init__(self,args,parent=None):
         QtGui.QMainWindow.__init__(self,parent)
@@ -356,12 +360,13 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         # connect signals
         self.importButton.clicked.connect(self._openDirDialog)
         self.statusSignal.connect(self.setStatus)
+        self.updateSignal.connect(self._updateSeriesTable)
         self.filterLine.textChanged.connect(self._setFilterString)
         self.imageSlider.valueChanged.connect(self.setSeriesImage)
         self.seriesView.clicked.connect(self._seriesTableClicked)
 
         # setup the list and table models
-        self.srcmodel=QtGui.QStringListModel()
+        self.srcmodel=QStringListModel()
         self.seriesmodel=SeriesTableModel(self.seriesColumns)
         self.seriesmodel.layoutChanged.connect(self._seriesTableResize)
         self.tagmodel=QtGui.QStandardItemModel()
@@ -414,7 +419,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
                         s.filenames,s.dcms=zip(*sorted(zip(s.filenames,s.dcms))) # sort series contents by filename
                     self.srclist.append((rootdir,series))
 
-                self._updateSeriesTable()
+                self.updateSignal.emit()
             except Empty:
                 pass
 
@@ -492,8 +497,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
             
             if img is None: # if the image is None use the default "no image" object
                 img=self.noimg
-            elif len(img.shape)==3: # multi-channel or multi-dimensional image, use average of dimensions
-                img=np.mean(img,axis=2)
+            #elif len(img.shape)==3: # multi-channel or multi-dimensional image, use average of dimensions
+            #    img=np.mean(img,axis=2)
 
             self.imageview.setImage(img.T,autoRange=autoRange,autoLevels=self.autoLevelsCheck.isChecked())
             self._fillTagView()
@@ -521,7 +526,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
     def removeSourceDir(self,index):
         '''Remove the source directory at the given index.'''
         self.srclist.pop(index)
-        self._updateSeriesTable()
+        self.updateSignal.emit()
 
     def addSourceDir(self,rootdir):
         '''Add the given directory to the queue of directories to load and set the self.lastDir value to its parent.'''
@@ -544,7 +549,7 @@ def main(args=[],app=None):
         # load the stylesheet included as a Qt resource
         with closing(QtCore.QFile(':/css/DefaultUIStyle.css')) as f:
             if f.open(QtCore.QFile.ReadOnly):
-                app.setStyleSheet(str(f.readAll()))
+                app.setStyleSheet(bytes(f.readAll()).decode('UTF-8'))
             else:
                 print('Failed to read %r'%f.fileName())
 

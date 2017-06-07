@@ -21,13 +21,21 @@ from setuptools import setup
 import subprocess, sys, platform, os, glob, shutil
 from DicomBrowser import __appname__, __version__
 
+# determine platfrom
 if platform.system().lower()=='darwin':
     plat='osx'
 elif platform.system().lower()=='windows':
     plat='win'
 else:
     plat='linux'
-    
+
+# determine PyQt version    
+try:
+    import PyQt5
+    qtversion=5
+except:
+    import PyQt4
+    qtversion=4
 
 long_description='''
 This is a lightweight portable Dicom browser application written in Python. It allows Dicom directories to be loaded, 
@@ -37,8 +45,12 @@ previewing Dicom data rather than doing any sort of processing.
 
 
 if 'generate' in sys.argv: # generate only, quit at this point before setup
-    # generate resource file
-    subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc4.py', shell=True)
+    # generate resource file for PyQt4 or 5
+    if qtversion==5:
+        subprocess.check_call('pyrcc5 res/Resources.qrc > DicomBrowser/Resources_rc5.py', shell=True)
+    else:
+        subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc4.py', shell=True)
+    
 elif 'app' in sys.argv:
     sys.argv.remove('app')
     appname='%s_%s'%(__appname__,__version__)
