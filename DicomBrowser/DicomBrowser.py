@@ -15,6 +15,9 @@
 # 
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
+'''
+DicomBrowser - simple lightweight Dicom browsing application. 
+'''
 
 import sys, os, threading, math, re
 from operator import itemgetter
@@ -25,7 +28,7 @@ from collections import OrderedDict
 try: # Python 2 and 3 support
     from Queue import Queue, Empty
     from StringIO import StringIO
-except:
+except ImportError:
     from queue import Queue, Empty
     from io import StringIO
 
@@ -34,13 +37,13 @@ try: # PyQt4 and 5 support
     from PyQt4.QtCore import Qt
     from PyQt4.QtGui import QStringListModel
     from . import Resources_rc4 # import resources manually since we have to do this to get the ui file
-except:
+except ImportError:
     from PyQt5 import QtGui, QtCore, uic
-    from PyQt5.QtCore import Qt,QStringListModel
+    from PyQt5.QtCore import Qt, QStringListModel
     from . import Resources_rc5 # import resources manually since we have to do this to get the ui file
     
 	
-scriptdir= os.path.dirname(os.path.abspath(__file__)) # path of the current file
+scriptdir=os.path.dirname(os.path.abspath(__file__)) # path of the current file
 
 # this allows the script to be run directly from the repository without having to install pydicom or pyqtgraph
 if os.path.isdir(scriptdir+'/../pydicom'):
@@ -55,6 +58,7 @@ from .__init__ import __version__
 
 
 # load the ui file from the resource, removing the "resources" tag so that uic doesn't try (and fail) to load the resources
+# this allows a loading the UI at runtime rather than generating a .py file with pyuic which isn't cross-compatible with PyQt4/5
 with closing(QtCore.QFile(':/layout/DicomBrowserWin.ui')) as layout:
     if layout.open(QtCore.QFile.ReadOnly):
         s=bytes(layout.readAll()).decode('utf-8')

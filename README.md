@@ -6,7 +6,7 @@ This is intended to be a cross-platform utility suitable for previewing Dicom da
 
 ## Installation
 
-DicomBrowser requires **Python 2.7**, **PyQt4**, **numpy**, **pydicom** and **pyqtgraph**, the latter two are submodules of this project.
+DicomBrowser requires **Python 2.7/3.\***, **PyQt4/5**, **numpy**, **pydicom** and **pyqtgraph**, the latter two are submodules of this project.
 Ensure these packages are installed, in the case of **pydicom** and **pyqtgraph** ensure the submodules are included in your clone:
 
     git clone --recursive https://github.com/ericspod/DicomBrowser.git
@@ -18,7 +18,7 @@ DicomBrowser can be installed using the **setup.py** script (although this isn't
 This will generate the necessary files for the UI, install the module, and create a script to run the application from the command line called *DicomBrowser*, but will not install other needed packages. 
 Ensure the pydicom and pyqtgraph submodules have been checked out and then run the above command in each to install them.
 
-PyQt4 must be acquired through your package manager or through its website. Numpy can be installed through your package manager, the website, or **pip**:
+PyQt4/5 must be acquired through your package manager or through its website. Numpy can be installed through your package manager, the website, or **pip**:
 
     pip install numpy
 
@@ -26,11 +26,7 @@ Generating the packaged executables requires **pyinstaller**, clone and install 
 
 ## Running
 
-DicomBrowser can be run directly as a script from the project's directory:
-
-    python DicomBrowser/DicomBrowser.py
-    
-or as a module:
+DicomBrowser can be run directly as a module from the project's directory:
 
     python -m DicomBrowser
 
