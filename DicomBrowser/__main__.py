@@ -18,7 +18,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-from .DicomBrowser import mainargv
-
+try:
+    from DicomBrowser.DicomBrowser import mainargv # for use as pyinstaller script
+except:
+    from .DicomBrowser import mainargv # for running a module directly
+    
 if __name__ == '__main__':
     mainargv()
