@@ -46,10 +46,8 @@ previewing Dicom data rather than doing any sort of processing.
 
 if 'generate' in sys.argv: # generate only, quit at this point before setup
     # generate resource file for PyQt4 or 5
-    if qtversion==5:
-        subprocess.check_call('pyrcc5 res/Resources.qrc > DicomBrowser/Resources_rc5.py', shell=True)
-    else:
-        subprocess.check_call('pyrcc4 res/Resources.qrc > DicomBrowser/Resources_rc4.py', shell=True)
+    cmd='pyrcc%(ver)i res/Resources.qrc > DicomBrowser/Resources_rc%(ver)i.py'
+    subprocess.check_call(cmd%{'ver':qtversion}, shell=True)
     
 elif 'app' in sys.argv:
     sys.argv.remove('app')
@@ -74,12 +72,12 @@ elif 'app' in sys.argv:
     hidden=' '.join('--hidden-import %s'%h for h in hidden)
     flags=' '.join('-%s'%f for f in flags)
     
-    cmd='pyinstaller %s %s -n %s %s %s DicomBrowser/__main__.py'%(flags,icon,appname,paths,hidden)
-    subprocess.check_call(cmd,shell=True)
+    cmd='pyinstaller %s %s -n %s %s %s DicomBrowser/__main__.py'
+    subprocess.check_call(cmd%(flags,icon,appname,paths,hidden),shell=True)
     
     if plat=='osx':
-        cmd='cd dist && hdiutil create -size 1000000k -volname %(name)s -srcfolder %(name)s.app -ov -format UDZO -imagekey zlib-level=9 %(name)s.dmg'%{'name':appname}
-        subprocess.check_call(cmd,shell=True)
+        cmd='cd dist && hdiutil create -size 1000000k -volname %(name)s -srcfolder %(name)s.app -ov -format UDZO -imagekey zlib-level=9 %(name)s.dmg'
+        subprocess.check_call(cmd%{'name':appname},shell=True)
     elif plat=='win':
         for f in glob.glob('dist/%s/mkl_*.dll'%appname): # remove unnecessary MKL libraries
             os.remove(f)

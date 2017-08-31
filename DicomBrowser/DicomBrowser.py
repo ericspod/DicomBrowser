@@ -405,9 +405,9 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
     def show(self):
         '''Calls the inherited show() method then sets the splitter positions.'''
         QtGui.QMainWindow.show(self)
-        self.listSplit.moveSplitter(200,1)
-        self.seriesSplit.moveSplitter(100,1)
-        self.viewMetaSplitter.moveSplitter(800,1)
+        self.listSplit.moveSplitter(100,1)
+        self.seriesSplit.moveSplitter(80,1)
+        self.viewMetaSplitter.moveSplitter(600,1)
 
     def _loadDirsThread(self):
         '''

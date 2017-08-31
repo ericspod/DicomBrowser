@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>769</width>
-    <height>607</height>
+    <width>1096</width>
+    <height>871</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -24,6 +24,12 @@
    <layout class="QGridLayout" name="gridLayout_3">
     <item row="0" column="0">
      <widget class="QSplitter" name="seriesSplit">
+      <property name="minimumSize">
+       <size>
+        <width>0</width>
+        <height>0</height>
+       </size>
+      </property>
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
@@ -34,6 +40,9 @@
        <widget class="QGroupBox" name="sourceGroup">
         <property name="title">
          <string>Dicom Sources</string>
+        </property>
+        <property name="checkable">
+         <bool>false</bool>
         </property>
         <layout class="QGridLayout" name="gridLayout">
          <property name="leftMargin">
@@ -48,25 +57,6 @@
          <property name="bottomMargin">
           <number>6</number>
          </property>
-         <item row="2" column="0">
-          <widget class="QListView" name="sourceListView">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="minimumSize">
-            <size>
-             <width>100</width>
-             <height>0</height>
-            </size>
-           </property>
-           <property name="editTriggers">
-            <set>QAbstractItemView::NoEditTriggers</set>
-           </property>
-          </widget>
-         </item>
          <item row="0" column="0">
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
@@ -97,6 +87,25 @@
             </spacer>
            </item>
           </layout>
+         </item>
+         <item row="2" column="0">
+          <widget class="QListView" name="sourceListView">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="minimumSize">
+            <size>
+             <width>0</width>
+             <height>0</height>
+            </size>
+           </property>
+           <property name="editTriggers">
+            <set>QAbstractItemView::NoEditTriggers</set>
+           </property>
+          </widget>
          </item>
          <item row="1" column="0">
           <widget class="QProgressBar" name="statusProgressBar">
@@ -137,7 +146,7 @@
            </property>
            <property name="minimumSize">
             <size>
-             <width>50</width>
+             <width>0</width>
              <height>0</height>
             </size>
            </property>
