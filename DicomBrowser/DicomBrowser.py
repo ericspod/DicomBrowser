@@ -229,6 +229,7 @@ class DicomSeries(object):
         '''Get the object storing tag information from Dicom file at the given index.'''
         if index not in self.tagcache:
             dcm=dicomio.read_file(self.filenames[index],stop_before_pixels=True)
+            dcm.SeriesDescription=dcm.get('SeriesDescription',dcm.get('SeriesInstanceUID','???')) # TODO: kludge? More general solution of telling series apart
             self.tagcache[index]=dcm
             
         return self.tagcache[index]
