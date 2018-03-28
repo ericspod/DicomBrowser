@@ -258,6 +258,9 @@
               <property name="textElideMode">
                <enum>Qt::ElideNone</enum>
               </property>
+              <property name="indentation">
+               <number>10</number>
+              </property>
               <property name="sortingEnabled">
                <bool>true</bool>
               </property>

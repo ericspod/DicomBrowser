@@ -90,7 +90,7 @@ keywordNameMap.update(extraKeywords)
 fullNameMap={v:k for k,v in keywordNameMap.items()} # maps full names to keywords
 
         
-def fillTagModel(model,dcm,regex=None,maxValueSize=1024):
+def fillTagModel(model,dcm,regex=None,maxValueSize=256):
     '''Fill a QStandardItemModel object `model' with a tree derived from tags in `dcm', filtering by pattern `regex'.'''
     try:
         regex=re.compile(str(regex),re.DOTALL)
@@ -145,8 +145,10 @@ def fillTagModel(model,dcm,regex=None,maxValueSize=1024):
             value=str(elem.value)
 
         return value        
-                
-    _datasetToItem(model,dcm)
+       
+    parent = QtGui.QStandardItem('Tags') # create a parent node every tag is a child of, used for copying all tag data
+    model.appendRow([parent])
+    _datasetToItem(parent,dcm)
     
 
 def loadDicomFiles(filenames,queue):
@@ -452,9 +454,10 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
                     print('',file=out)
                     for c in range(child.columnCount()):
                         cc=child.child(r,c)
-                        print(' '*level,cc.text(),file=out,end='')
-                        if cc.hasChildren():
-                            printChildren(cc,level+1,out)
+                        if cc is not None:
+                            print(' '*level,cc.text(),file=out,end='')
+                            if cc.hasChildren():
+                                printChildren(cc,level+1,out)
                             
             
             out=StringIO()
