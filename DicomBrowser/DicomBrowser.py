@@ -1,5 +1,5 @@
 # DicomBrowser
-# Copyright (C) 2016-7 Eric Kerfoot, King's College London, all rights reserved
+# Copyright (C) 2016-8 Eric Kerfoot, King's College London, all rights reserved
 # 
 # This file is part of DicomBrowser.
 #
@@ -19,7 +19,8 @@
 DicomBrowser - simple lightweight Dicom browsing application. 
 '''
 
-import sys, os, threading, math, re
+from __future__ import print_function
+import sys, os, threading, math, re, zipfile
 from operator import itemgetter
 from multiprocessing import Pool, Manager, cpu_count, freeze_support
 from contextlib import closing
@@ -33,14 +34,14 @@ except ImportError:
     from io import StringIO
 
 try: # PyQt4 and 5 support
+    from PyQt5 import QtGui, QtCore, uic
+    from PyQt5.QtCore import Qt, QStringListModel
+    from . import Resources_rc5 # import resources manually since we have to do this to get the ui file
+except ImportError:
     from PyQt4 import QtGui, QtCore, uic
     from PyQt4.QtCore import Qt
     from PyQt4.QtGui import QStringListModel
     from . import Resources_rc4 # import resources manually since we have to do this to get the ui file
-except ImportError:
-    from PyQt5 import QtGui, QtCore, uic
-    from PyQt5.QtCore import Qt, QStringListModel
-    from . import Resources_rc5 # import resources manually since we have to do this to get the ui file
     
 	
 scriptdir=os.path.dirname(os.path.abspath(__file__)) # path of the current file
@@ -67,7 +68,7 @@ with closing(QtCore.QFile(':/layout/DicomBrowserWin.ui')) as layout:
 
 
 # tag names of default columns in the series list, this can be changed to pull out different tag names for columns
-seriesListColumns=('PatientName','SeriesDescription','SeriesNumber','NumImages')
+seriesListColumns=('NumImages','SeriesNumber','PatientName','SeriesDescription')
 # names of columns in tag tree, this shouldn't ever change
 tagTreeColumns=('Name','Tag','Value')
 # list of tags to initially load when a directory is scanned, loading only these speeds up scanning immensely
@@ -89,7 +90,7 @@ keywordNameMap.update(extraKeywords)
 fullNameMap={v:k for k,v in keywordNameMap.items()} # maps full names to keywords
 
         
-def fillTagModel(model,dcm,regex=None):
+def fillTagModel(model,dcm,regex=None,maxValueSize=1024):
     '''Fill a QStandardItemModel object `model' with a tree derived from tags in `dcm', filtering by pattern `regex'.'''
     try:
         regex=re.compile(str(regex),re.DOTALL)
@@ -105,6 +106,12 @@ def fillTagModel(model,dcm,regex=None):
             tagitem = QtGui.QStandardItem(tag)
             
             if isinstance(value,str):
+                origvalue=value
+                
+                if len(value)>maxValueSize:
+                    origvalue=repr(value)
+                    value=value[:maxValueSize]+'...'
+                        
                 try:
                     value=value.decode('ascii')
                     if '\n' in value or '\r' in value: # multiline text data should be shown as repr
@@ -113,7 +120,11 @@ def fillTagModel(model,dcm,regex=None):
                     value=repr(value)
                     
                 if not regex or re.search(regex,str(elem.name)+tag+value) is not None:
-                    parent.appendRow([parent1,tagitem,QtGui.QStandardItem(value)])
+                    item=QtGui.QStandardItem(value)
+                    # original value is stored directly or as repr() form for the tag value item, used later when copying
+                    item.setData(origvalue) 
+                        
+                    parent.appendRow([parent1,tagitem,item])
                     
             elif value is not None and len(value)>0:
                 parent.appendRow([parent1,tagitem])
@@ -160,7 +171,7 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
     '''
     allfiles=[]
     for root,_,files in os.walk(rootdir):
-        allfiles+=[os.path.join(root,f) for f in files]
+        allfiles+=[os.path.join(root,f) for f in files if f.lower()!='dicomdir']
         
     numprocs=numprocs or cpu_count()
     m = Manager()
@@ -194,14 +205,53 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
                     series[seriesid]=DicomSeries(seriesid,rootdir)
     
                 series[seriesid].addFile(filename,dcm)
-                count+=1
-                
-                # update status only 100 times, doing it too frequently really slows things down
-                if numfiles<100 or count%(numfiles//100)==0: 
-                    statusfunc('Loading DICOM files',count,numfiles)
             except Empty: # from queue.get(), keep trying so long as the loop condition is true
                 pass
-        
+            
+            count+=1
+            # update status only 100 times, doing it too frequently really slows things down
+            if numfiles<100 or count%(numfiles//100)==0: 
+                statusfunc('Loading DICOM files',count,numfiles)
+    
+    statusfunc('',0,0)
+    return list(series.values())
+    
+
+def loadDicomZip(filename,statusfunc=lambda s,c,n:None):
+    series={}
+    count=0
+    
+    with zipfile.ZipFile(filename) as z:
+        names=z.namelist()
+        numfiles=len(names)
+        for n in names:
+            s=StringIO(z.read(n))
+            try:
+                dcm=dicomio.read_file(s)
+            except:
+                pass # ignore files which aren't Dicom files
+            else:
+                seriesid=dcm.get('SeriesInstanceUID','???')
+                if seriesid not in series:
+                    series[seriesid]=DicomSeries(seriesid,filename)
+                
+                try: # attempt to create the image matrix, store None if this doesn't work
+                    rslope=float(dcm.get('RescaleSlope',1) or 1)
+                    rinter=float(dcm.get('RescaleIntercept',0) or 0)
+                    img= dcm.pixel_array*rslope+rinter
+                except:
+                    img=None
+    
+                s=series[seriesid]
+                s.addFile(filename,dcm)
+                s.tagcache[len(s.filenames)-1]=dcm
+                s.imgcache[len(s.filenames)-1]=img
+                
+            count+=1
+            # update status only 100 times, doing it too frequently really slows things down
+            if numfiles<100 or count%(numfiles//100)==0: 
+                statusfunc('Loading DICOM files',count,numfiles)
+    
     statusfunc('',0,0)
     return list(series.values())
     
@@ -216,14 +266,14 @@ class DicomSeries(object):
         self.seriesID=seriesID # ID of the series or ???
         self.rootdir=rootdir # the directory where Dicoms were loaded from, files for this series may be in subdirectories
         self.filenames=[] # list of filenames for the Dicom associated with this series
-        self.dcms=[] # loaded abbreviated tag->(name,value) maps, 1 for each of self.filenames
+        self.loadtags=[] # loaded abbreviated tag->(name,value) maps, 1 for each of self.filenames
         self.imgcache={} # cache of loaded image data, mapping index in self.filenames to ndarray objects or None for non-images files
         self.tagcache={} # cache of all loaded tag values, mapping index in self.filenames to OrderedDict of tag->(name,value) maps
         
-    def addFile(self,filename,dcm):
+    def addFile(self,filename,loadtag):
         '''Add a filename and abbreviated tag map to the series.'''
         self.filenames.append(filename)
-        self.dcms.append(dcm)
+        self.loadtags.append(loadtag)
         
     def getTagObject(self,index):
         '''Get the object storing tag information from Dicom file at the given index.'''
@@ -235,10 +285,10 @@ class DicomSeries(object):
         return self.tagcache[index]
 
     def getExtraTagValues(self):
-        '''Return the extra tag values calculated from the series tag info stored in self.dcms.'''
+        '''Return the extra tag values calculated from the series tag info stored in self.filenames.'''
         start,interval,numtimes=self.getTimestepSpec()
         extravals={
-            'NumImages':len(self.dcms),
+            'NumImages':len(self.filenames),
             'TimestepSpec':'start: %i, interval: %i, # Steps: %i'%(start,interval,numtimes),
             'StartTime':start,
             'NumTimesteps':numtimes,
@@ -263,12 +313,11 @@ class DicomSeries(object):
             img=None
             try:
                 dcm=dicomio.read_file(self.filenames[index])
-                if dcm.pixel_array is not None:
-                    rslope=float(dcm.get('RescaleSlope',1))
-                    rinter=float(dcm.get('RescaleIntercept',0))
-                    img= dcm.pixel_array*rslope+rinter
+                rslope=float(dcm.get('RescaleSlope',1) or 1)
+                rinter=float(dcm.get('RescaleIntercept',0) or 0)
+                img= dcm.pixel_array*rslope+rinter
             except Exception:
-                pass
+                pass # exceptions indicate that the pixel data doesn't exist or isn't readable so ignore
                 
             self.imgcache[index]=img
             
@@ -276,12 +325,12 @@ class DicomSeries(object):
 
     def addSeries(self,series):
         '''Add every loaded dcm file from DicomSeries object `series` into this series.'''
-        for f,dcm in zip(series.filenames,series.dcms):
-            self.addFile(f,dcm)
+        for f,loadtag in zip(series.filenames,series.loadtags):
+            self.addFile(f,loadtag)
 
     def getTimestepSpec(self,tag='TriggerTime'):
         '''Returns (start time, interval, num timesteps) triple.'''
-        times=sorted(set(int(dcm.get(tag,0)) for dcm in self.dcms))
+        times=sorted(set(int(loadtag.get(tag,0)) for loadtag in self.loadtags))
 
         if not times or times==[0]:
             return 0.0,0.0,0.0
@@ -334,7 +383,7 @@ class SeriesTableModel(QtCore.QAbstractTableModel):
 
 class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
     '''
-    This is the window class for the app which implements the UI functionality and the directory loading thread. It 
+    The window class for the app which implements the UI functionality and the directory loading thread. It 
     inherits from the type loaded from the .ui file in the resources. 
     '''
     statusSignal=QtCore.pyqtSignal(str,int,int) # signal for updating the status bar asynchronously
@@ -352,10 +401,10 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         self.filterRegex='' # regular expression to filter tags by
 
         # create the directory queue and loading thread objects
-        self.dirQueue=Queue() # queue of directories to load
-        self.loadDirThread=threading.Thread(target=self._loadDirsThread)
+        self.srcQueue=Queue() # queue of directories to load
+        self.loadDirThread=threading.Thread(target=self._loadSourceThread)
         self.loadDirThread.daemon=True # clean shutdown possible with daemon threads
-        self.loadDirThread.start() # start the thread now, it will wait until something is put on self.dirQueue
+        self.loadDirThread.start() # start the thread now, it will wait until something is put on self.srcQueue
         
         # setup ui
         self.setupUi(self) # create UI elements based on the loaded .ui file
@@ -392,9 +441,33 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         self.noimg=np.ndarray((qimg.width(),qimg.height()),dtype=np.ubyte,buffer=bytedata)
         
         # add the directories passed as arguments to the directory queue to start loading
-        for i in args:
-            if os.path.isdir(i):
-                self.addSourceDir(i)
+        for i in args[1:]:
+            if os.path.exists(i):
+                self.addSource(i)
+                
+        def _setClipboard():
+            '''Set the clipboard to contain fuller tag data when CTRL+C is applied to a tag line in the tree.'''
+            def printChildren(child,level,out):
+                for r in range(child.rowCount()):
+                    print('',file=out)
+                    for c in range(child.columnCount()):
+                        cc=child.child(r,c)
+                        print(' '*level,cc.text(),file=out,end='')
+                        if cc.hasChildren():
+                            printChildren(cc,level+1,out)
+                            
+            
+            out=StringIO()
+            items=[self.tagmodel.itemFromIndex(i) for i in self.tagView.selectedIndexes()]
+            print(' '.join(i.data() or i.text() for i in items if i),end='',file=out)
+                    
+            if items[0].hasChildren():
+                printChildren(items[0],1,out)
+                
+            QtGui.QApplication.clipboard().setText(out.getvalue())
+                
+        # override CTRL+C in the tag tree to copy a fuller set of tag data to the clipboard
+        QtGui.QShortcut(QtGui.QKeySequence('Ctrl+c'),self.tagView).activated.connect(_setClipboard)
 
     def keyPressEvent(self,e):
         '''Close the window if escape is pressed, otherwise do as inherited.'''
@@ -410,19 +483,21 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         self.seriesSplit.moveSplitter(80,1)
         self.viewMetaSplitter.moveSplitter(600,1)
 
-    def _loadDirsThread(self):
+    def _loadSourceThread(self):
         '''
-        This method is run in a daemon thread and continually checks self.dirQueue for a queued directory to scan for
-        Dicom files. It calls loadDicomDir() for a given directory and adds the results the self.srclist member.
+        This method is run in a daemon thread and continually checks self.srcQueue for a queued directory or zip file to 
+        scan for Dicom files. It calls loadDicomDir() for a given directory or loadDicomZip() for a zip file and adds the 
+        results the self.srclist member.
         '''
         while True:
             try:
-                rootdir=self.dirQueue.get(True,0.5)
-                series=loadDicomDir(rootdir,self.statusSignal.emit)
+                src=self.srcQueue.get(True,0.5)
+                loader=loadDicomDir if os.path.isdir(src) else loadDicomZip
+                series=loader(src,self.statusSignal.emit)
                 if series and all(len(s.filenames)>0 for s in series):
                     for s in series:
-                        s.filenames,s.dcms=zip(*sorted(zip(s.filenames,s.dcms))) # sort series contents by filename
-                    self.srclist.append((rootdir,series))
+                        s.filenames,s.loadtags=zip(*sorted(zip(s.filenames,s.loadtags))) # sort series contents by filename
+                    self.srclist.append((src,series))
 
                 self.updateSignal.emit()
             except Empty:
@@ -432,7 +507,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         '''Opens the open file dialog to choose a directory to scan for Dicoms.'''
         rootdir=str(QtGui.QFileDialog.getExistingDirectory(self,'Choose Source Directory',self.lastDir))
         if rootdir:
-            self.addSourceDir(rootdir)
+            self.addSource(rootdir)
 
     def _updateSeriesTable(self):
         '''
@@ -510,7 +585,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
             self.imageSlider.setTickInterval(interval)
             self.imageSlider.setMaximum(maxindex)
             self.numLabel.setText(str(self.imageIndex))
-            self.view2DGroup.setTitle('2D View - '+series.filenames[self.imageIndex])
+            self.view2DGroup.setTitle('2D View - '+os.path.basename(series.filenames[self.imageIndex]))
+            self.view2DGroup.setToolTip(series.filenames[self.imageIndex])
             
     def setStatus(self,msg,progress=0,progressmax=0):
         '''
@@ -528,14 +604,14 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         self.statusProgressBar.setRange(0,progressmax)
         self.statusProgressBar.setValue(progress)
 
-    def removeSourceDir(self,index):
+    def removeSource(self,index):
         '''Remove the source directory at the given index.'''
         self.srclist.pop(index)
         self.updateSignal.emit()
 
-    def addSourceDir(self,rootdir):
+    def addSource(self,rootdir):
         '''Add the given directory to the queue of directories to load and set the self.lastDir value to its parent.'''
-        self.dirQueue.put(rootdir)
+        self.srcQueue.put(rootdir)
         self.lastDir=os.path.dirname(rootdir)
 
 

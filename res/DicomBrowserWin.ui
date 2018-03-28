@@ -33,9 +33,15 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
+      <property name="handleWidth">
+       <number>10</number>
+      </property>
       <widget class="QSplitter" name="listSplit">
        <property name="orientation">
         <enum>Qt::Horizontal</enum>
+       </property>
+       <property name="handleWidth">
+        <number>10</number>
        </property>
        <widget class="QGroupBox" name="sourceGroup">
         <property name="title">
@@ -150,6 +156,9 @@
              <height>0</height>
             </size>
            </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
            <property name="editTriggers">
             <set>QAbstractItemView::NoEditTriggers</set>
            </property>
@@ -213,6 +222,9 @@
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
           </property>
+          <property name="handleWidth">
+           <number>10</number>
+          </property>
           <widget class="QGroupBox" name="view2DGroup">
            <property name="title">
             <string>2D View</string>
@@ -244,7 +256,7 @@
                <enum>QAbstractItemView::SingleSelection</enum>
               </property>
               <property name="textElideMode">
-               <enum>Qt::ElideRight</enum>
+               <enum>Qt::ElideNone</enum>
               </property>
               <property name="sortingEnabled">
                <bool>true</bool>
