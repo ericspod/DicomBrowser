@@ -68,7 +68,7 @@ with closing(QtCore.QFile(':/layout/DicomBrowserWin.ui')) as layout:
 
 
 # tag names of default columns in the series list, this can be changed to pull out different tag names for columns
-seriesListColumns=('NumImages','SeriesNumber','PatientName','SeriesDescription')
+seriesListColumns=('NumImages','SeriesNumber','PatientName','SeriesInstanceUID','SeriesDescription')
 # names of columns in tag tree, this shouldn't ever change
 tagTreeColumns=('Name','Tag','Value')
 # list of tags to initially load when a directory is scanned, loading only these speeds up scanning immensely
@@ -227,6 +227,7 @@ def loadDicomZip(filename,statusfunc=lambda s,c,n:None):
         names=z.namelist()
         numfiles=len(names)
         for n in names:
+            nfilename='%s?%s'%(filename,n)
             s=StringIO(z.read(n))
             try:
                 dcm=dicomio.read_file(s)
@@ -234,8 +235,9 @@ def loadDicomZip(filename,statusfunc=lambda s,c,n:None):
                 pass # ignore files which aren't Dicom files
             else:
                 seriesid=dcm.get('SeriesInstanceUID','???')
+                
                 if seriesid not in series:
-                    series[seriesid]=DicomSeries(seriesid,filename)
+                    series[seriesid]=DicomSeries(seriesid,nfilename)
                 
                 try: # attempt to create the image matrix, store None if this doesn't work
                     rslope=float(dcm.get('RescaleSlope',1) or 1)
@@ -245,7 +247,7 @@ def loadDicomZip(filename,statusfunc=lambda s,c,n:None):
                     img=None
     
                 s=series[seriesid]
-                s.addFile(filename,dcm)
+                s.addFile(nfilename,dcm)
                 s.tagcache[len(s.filenames)-1]=dcm
                 s.imgcache[len(s.filenames)-1]=img
                 
@@ -255,6 +257,7 @@ def loadDicomZip(filename,statusfunc=lambda s,c,n:None):
                 statusfunc('Loading DICOM files',count,numfiles)
     
     statusfunc('',0,0)
+    
     return list(series.values())
     
 
@@ -281,7 +284,6 @@ class DicomSeries(object):
         '''Get the object storing tag information from Dicom file at the given index.'''
         if index not in self.tagcache:
             dcm=dicomio.read_file(self.filenames[index],stop_before_pixels=True)
-            dcm.SeriesDescription=dcm.get('SeriesDescription',dcm.get('SeriesInstanceUID','???')) # TODO: kludge? More general solution of telling series apart
             self.tagcache[index]=dcm
             
         return self.tagcache[index]
@@ -306,6 +308,8 @@ class DicomSeries(object):
 
         dcm=self.getTagObject(index)
         extravals=self.getExtraTagValues()
+        
+        #dcm.SeriesDescription=dcm.get('SeriesDescription',dcm.get('SeriesInstanceUID','???')) # TODO: kludge? More general solution of telling series apart
         
         return tuple(str(dcm.get(n,extravals.get(n,''))) for n in names)
 
@@ -500,6 +504,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
                 if series and all(len(s.filenames)>0 for s in series):
                     for s in series:
                         s.filenames,s.loadtags=zip(*sorted(zip(s.filenames,s.loadtags))) # sort series contents by filename
+                        
                     self.srclist.append((src,series))
 
                 self.updateSignal.emit()
