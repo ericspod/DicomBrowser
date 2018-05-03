@@ -19,7 +19,7 @@
 
 from setuptools import setup
 import subprocess, sys, platform, os, glob, shutil
-from DicomBrowser import __appname__, __version__
+from DicomBrowser import __appname__, __version__, __author__
 
 # determine platfrom
 if platform.system().lower()=='darwin':
@@ -90,7 +90,7 @@ else:
         name = __appname__,
         version = __version__,
         packages=['DicomBrowser'],
-        author='Eric Kerfoot',
+        author=__author__,
         author_email="eric.kerfoot@kcl.ac.uk",
         url="http://github.com/ericspod/DicomBrowser",
         license="GPLv3",
