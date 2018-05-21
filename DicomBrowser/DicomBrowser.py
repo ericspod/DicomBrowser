@@ -187,16 +187,8 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
         return []
 
     with closing(Pool(processes=numprocs)) as pool:
-        for i in range(numprocs):
-            # partition the list of files amongst each processor
-            partsize=numfiles/float(numprocs)
-            start=int(math.floor(i*partsize))
-            end=int(math.floor((i+1)*partsize))
-            if (numfiles-end)<partsize:
-                end=numfiles
-                
-            r=pool.apply_async(loadDicomFiles,(allfiles[start:end],queue))
-            res.append(r)
+        for filesec in np.array_split(allfiles,numprocs):
+            res.append(pool.apply_async(loadDicomFiles,(filesec,queue)))
     
         # loop so long as any process is busy or there are files on the queue to process
         while any(not r.ready() for r in res) or not queue.empty():
