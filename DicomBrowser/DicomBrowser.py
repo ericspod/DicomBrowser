@@ -301,7 +301,8 @@ class DicomSeries(object):
         dcm=self.getTagObject(index)
         extravals=self.getExtraTagValues()
         
-        #dcm.SeriesDescription=dcm.get('SeriesDescription',dcm.get('SeriesInstanceUID','???')) # TODO: kludge? More general solution of telling series apart
+        # TODO: kludge? More general solution of telling series apart
+        #dcm.SeriesDescription=dcm.get('SeriesDescription',dcm.get('SeriesInstanceUID','???')) 
         
         return tuple(str(dcm.get(n,extravals.get(n,''))) for n in names)
 
@@ -443,30 +444,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
             if os.path.exists(i):
                 self.addSource(i)
                 
-        def _setClipboard():
-            '''Set the clipboard to contain fuller tag data when CTRL+C is applied to a tag line in the tree.'''
-            def printChildren(child,level,out):
-                for r in range(child.rowCount()):
-                    print('',file=out)
-                    for c in range(child.columnCount()):
-                        cc=child.child(r,c)
-                        if cc is not None:
-                            print(' '*level,cc.text(),file=out,end='')
-                            if cc.hasChildren():
-                                printChildren(cc,level+1,out)
-                            
-            
-            out=StringIO()
-            items=[self.tagmodel.itemFromIndex(i) for i in self.tagView.selectedIndexes()]
-            print(' '.join(i.data() or i.text() for i in items if i),end='',file=out)
-                    
-            if items[0].hasChildren():
-                printChildren(items[0],1,out)
-                
-            QtGui.QApplication.clipboard().setText(out.getvalue())
-                
         # override CTRL+C in the tag tree to copy a fuller set of tag data to the clipboard
-        QtGui.QShortcut(QtGui.QKeySequence('Ctrl+c'),self.tagView).activated.connect(_setClipboard)
+        QtGui.QShortcut(QtGui.QKeySequence('Ctrl+c'),self.tagView).activated.connect(self._setClipboard)
 
     def keyPressEvent(self,e):
         '''Close the window if escape is pressed, otherwise do as inherited.'''
@@ -551,6 +530,28 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         self.tagView.expandAll()
         self.tagView.resizeColumnToContents(0)
         self.tagView.verticalScrollBar().setValue(vpos)
+        
+    def _setClipboard(self):
+        '''Set the clipboard to contain fuller tag data when CTRL+C is applied to a tag line in the tree.'''
+        def printChildren(child,level,out):
+            for r in range(child.rowCount()):
+                print('',file=out)
+                for c in range(child.columnCount()):
+                    cc=child.child(r,c)
+                    if cc is not None:
+                        print(' '*level,cc.text(),file=out,end='')
+                        if cc.hasChildren():
+                            printChildren(cc,level+1,out)
+                        
+        
+        out=StringIO()
+        items=[self.tagmodel.itemFromIndex(i) for i in self.tagView.selectedIndexes()]
+        print(' '.join(i.data() or i.text() for i in items if i),end='',file=out)
+                
+        if items[0].hasChildren():
+            printChildren(items[0],1,out)
+            
+        QtGui.QApplication.clipboard().setText(out.getvalue())
         
     def getSelectedSeries(self):
         '''Returns the DicomSeries object for the selected series, None if no series is selected.'''
