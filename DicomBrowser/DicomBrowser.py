@@ -213,6 +213,11 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
     
 
 def loadDicomZip(filename,statusfunc=lambda s,c,n:None):
+    '''
+    Load Dicom images from the given zip file `filename'. This uses the status callback `statusfunc' like loadDicomDir().
+    Loaded files will have their pixel data thus avoiding the need to reload the zip file when an image is viewed but is
+    at the expense of load time and memory. Return value is a sequence of DicomSeries objects in no particular order.
+    '''
     series={}
     count=0
     
@@ -232,6 +237,7 @@ def loadDicomZip(filename,statusfunc=lambda s,c,n:None):
                 if seriesid not in series:
                     series[seriesid]=DicomSeries(seriesid,nfilename)
                 
+                # need to load image data now since we don't want to reload the zip file later when an image is viewed
                 try: # attempt to create the image matrix, store None if this doesn't work
                     rslope=float(dcm.get('RescaleSlope',1) or 1)
                     rinter=float(dcm.get('RescaleIntercept',0) or 0)
@@ -310,14 +316,13 @@ class DicomSeries(object):
     def getPixelData(self,index):
         '''Get the pixel data Numpy array for file at position `index` in self.filenames, or None if there is no pixel data.'''
         if index not in self.imgcache:
-            img=None
             try:
                 dcm=dicomio.read_file(self.filenames[index])
                 rslope=float(dcm.get('RescaleSlope',1) or 1)
                 rinter=float(dcm.get('RescaleIntercept',0) or 0)
                 img= dcm.pixel_array*rslope+rinter
             except:
-                pass # exceptions indicate that the pixel data doesn't exist or isn't readable so ignore
+                img=None # exceptions indicate that the pixel data doesn't exist or isn't readable so ignore
                 
             self.imgcache[index]=img
             
@@ -625,14 +630,14 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         self.lastDir=os.path.dirname(rootdir)
 
 
-def main(args=[],app=None):
+def main(args=[],qapp=None):
     '''
     Default main program which starts Qt based on the command line arguments `args', sets the stylesheet if present, then
     creates the window object and shows it. The `args' list of command line arguments is also passed to the window object
-    to pick up on specified directories. The `app' object would be the QApplication object if this was created elsewhere,
+    to pick up on specified directories. The `qapp' object would be the QApplication object if this was created elsewhere,
     otherwise it's created here. Returns the value of QApplication.exec_() if this object was created here otherwise 0.
     '''
-    if not app:
+    if not qapp:
         app = QtGui.QApplication(args)
         app.setAttribute(Qt.AA_DontUseNativeMenuBar) # in OSX, forces menubar to be in window
         app.setStyle('Plastique')
@@ -647,7 +652,7 @@ def main(args=[],app=None):
     browser=DicomBrowser(args)
     browser.show()
 
-    return app.exec_() if app else 0
+    return 0 if qapp else app.exec_()
 
 
 def mainargv():
