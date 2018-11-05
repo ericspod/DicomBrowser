@@ -412,7 +412,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         self.setStatus('')
         
         # connect signals
-        self.importButton.clicked.connect(self._openDirDialog)
+        self.importDirButton.clicked.connect(self._openDirDialog)
+        self.importZipButton.clicked.connect(self._openZipDialog)
         self.statusSignal.connect(self.setStatus)
         self.updateSignal.connect(self._updateSeriesTable)
         self.filterLine.textChanged.connect(self._setFilterString)
@@ -458,7 +459,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
     def show(self):
         '''Calls the inherited show() method then sets the splitter positions.'''
         QtGui.QMainWindow.show(self)
-        self.listSplit.moveSplitter(100,1)
+        self.listSplit.moveSplitter(120,1)
         self.seriesSplit.moveSplitter(80,1)
         self.viewMetaSplitter.moveSplitter(600,1)
 
@@ -488,6 +489,12 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         rootdir=str(QtGui.QFileDialog.getExistingDirectory(self,'Choose Source Directory',self.lastDir))
         if rootdir:
             self.addSource(rootdir)
+            
+    def _openZipDialog(self):
+        '''Opens the open file dialog to choose a zip file to scan for Dicoms.'''
+        zipfile=QtGui.QFileDialog.getOpenFileName(self,'Choose Zip File',self.lastDir,'Zip Files (*.zip)')
+        if zipfile[0]:
+            self.addSource(zipfile[0])
 
     def _updateSeriesTable(self):
         '''
@@ -601,7 +608,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
         self.statusText.setText(msg)
         self.statusText.setVisible(bool(msg))
-        self.importButton.setVisible(not bool(msg))
+        self.importDirButton.setVisible(not bool(msg))
+        self.importZipButton.setVisible(not bool(msg))
         self.statusProgressBar.setVisible(progressmax>0)
         self.statusProgressBar.setRange(0,progressmax)
         self.statusProgressBar.setValue(progress)
