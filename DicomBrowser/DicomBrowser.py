@@ -25,6 +25,7 @@ from operator import itemgetter
 from multiprocessing import Pool, Manager, cpu_count, freeze_support
 from contextlib import closing
 from collections import OrderedDict
+from io import BytesIO
 
 try: # Python 2 and 3 support
     from Queue import Queue, Empty
@@ -220,7 +221,7 @@ def loadDicomZip(filename,statusfunc=lambda s,c,n:None):
         numfiles=len(names)
         for n in names:
             nfilename='%s?%s'%(filename,n)
-            s=StringIO(z.read(n))
+            s=BytesIO(z.read(n))
             try:
                 dcm=dicomio.read_file(s)
             except:
@@ -315,7 +316,7 @@ class DicomSeries(object):
                 rslope=float(dcm.get('RescaleSlope',1) or 1)
                 rinter=float(dcm.get('RescaleIntercept',0) or 0)
                 img= dcm.pixel_array*rslope+rinter
-            except Exception:
+            except:
                 pass # exceptions indicate that the pixel data doesn't exist or isn't readable so ignore
                 
             self.imgcache[index]=img
