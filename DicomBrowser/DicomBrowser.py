@@ -61,14 +61,16 @@ from .__init__ import __version__
 # This allows loading the UI at runtime rather than generating a .py file with pyuic not cross-compatible with PyQt4/5.
 with closing(QtCore.QFile(':/layout/DicomBrowserWin.ui')) as uiFile:
     if uiFile.open(QtCore.QFile.ReadOnly):
-        ui = bytes(layout.readAll()).decode('utf-8')
+        ui = bytes(uiFile.readAll()).decode('utf-8')
         ui = re.sub('<resources>.*</resources>', '', ui, flags=re.DOTALL)  # get rid of the resources section in the XML
         Ui_DicomBrowserWin, _ = uic.loadUiType(StringIO(ui))  # create a local type definition
 
 # tag names of default columns in the series list, this can be changed to pull out different tag names for columns
 seriesListColumns = ('NumImages', 'SeriesNumber', 'PatientName', 'SeriesInstanceUID', 'SeriesDescription')
+
 # names of columns in tag tree, this shouldn't ever change
 tagTreeColumns = ('Name', 'Tag', 'Value')
+
 # list of tags to initially load when a directory is scanned, loading only these speeds up scanning immensely
 loadTags = ('SeriesInstanceUID', 'TriggerTime', 'PatientName', 'SeriesDescription', 'SeriesNumber')
 
