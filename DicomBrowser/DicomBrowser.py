@@ -20,7 +20,7 @@ DicomBrowser - simple lightweight Dicom browsing application.
 '''
 
 from __future__ import print_function
-import sys, os, threading, math, re, zipfile
+import sys, os, threading, re, zipfile
 from operator import itemgetter
 from multiprocessing import Pool, Manager, cpu_count, freeze_support
 from contextlib import closing
@@ -59,13 +59,13 @@ from pydicom import dicomio, datadict, errors
 from .__init__ import __version__
 
 
-# load the ui file from the resource, removing the "resources" tag so that uic doesn't try (and fail) to load the resources
-# this allows a loading the UI at runtime rather than generating a .py file with pyuic which isn't cross-compatible with PyQt4/5
+# Load the ui file from the resource, removing the "resources" tag so that uic doesn't try (and fail) to load resources.
+# This allows loading the UI at runtime rather than generating a .py file with pyuic not cross-compatible with PyQt4/5.
 with closing(QtCore.QFile(':/layout/DicomBrowserWin.ui')) as layout:
     if layout.open(QtCore.QFile.ReadOnly):
-        s=bytes(layout.readAll()).decode('utf-8')
-        s=re.sub('<resources>.*</resources>','',s,flags=re.DOTALL) # get rid of the resources section in the XML
-        Ui_DicomBrowserWin,_=uic.loadUiType(StringIO(s)) # create a local type definition
+        ui=bytes(layout.readAll()).decode('utf-8')
+        ui=re.sub('<resources>.*</resources>','',ui,flags=re.DOTALL) # get rid of the resources section in the XML
+        Ui_DicomBrowserWin,_=uic.loadUiType(StringIO(ui)) # create a local type definition
 
 
 # tag names of default columns in the series list, this can be changed to pull out different tag names for columns
@@ -122,7 +122,7 @@ def fillTagModel(model,dcm,regex=None,maxValueSize=256):
                     
                 if not regex or re.search(regex,str(elem.name)+tag+value) is not None:
                     item=QtGui.QStandardItem(value)
-                    # original value is stored directly or as repr() form for the tag value item, used later when copying
+                    # original value is stored directly or as repr() form for tag value item, used later when copying
                     item.setData(origvalue) 
                         
                     parent.appendRow([parent1,tagitem,item])
@@ -147,9 +147,9 @@ def fillTagModel(model,dcm,regex=None,maxValueSize=256):
 
         return value        
        
-    parent = QtGui.QStandardItem('Tags') # create a parent node every tag is a child of, used for copying all tag data
-    model.appendRow([parent])
-    _datasetToItem(parent,dcm)
+    tparent = QtGui.QStandardItem('Tags') # create a parent node every tag is a child of, used for copying all tag data
+    model.appendRow([tparent])
+    _datasetToItem(tparent,dcm)
     
 
 def loadDicomFiles(filenames,queue):
@@ -214,7 +214,7 @@ def loadDicomDir(rootdir,statusfunc=lambda s,c,n:None,numprocs=None):
 
 def loadDicomZip(filename,statusfunc=lambda s,c,n:None):
     '''
-    Load Dicom images from the given zip file `filename'. This uses the status callback `statusfunc' like loadDicomDir().
+    Load Dicom images from given zip file `filename'. This uses the status callback `statusfunc' like loadDicomDir().
     Loaded files will have their pixel data thus avoiding the need to reload the zip file when an image is viewed but is
     at the expense of load time and memory. Return value is a sequence of DicomSeries objects in no particular order.
     '''
@@ -268,11 +268,11 @@ class DicomSeries(object):
     '''
     def __init__(self,seriesID,rootdir):
         self.seriesID=seriesID # ID of the series or ???
-        self.rootdir=rootdir # the directory where Dicoms were loaded from, files for this series may be in subdirectories
+        self.rootdir=rootdir # directory where Dicoms were loaded from, files for this series may be in subdirectories
         self.filenames=[] # list of filenames for the Dicom associated with this series
         self.loadtags=[] # loaded abbreviated tag->(name,value) maps, 1 for each of self.filenames
-        self.imgcache={} # cache of loaded image data, mapping index in self.filenames to ndarray objects or None for non-images files
-        self.tagcache={} # cache of all loaded tag values, mapping index in self.filenames to OrderedDict of tag->(name,value) maps
+        self.imgcache={} # image data cache, mapping index in self.filenames to arrays or None for non-images files
+        self.tagcache={} # tag values cache, mapping index in self.filenames to OrderedDict of tag->(name,value) maps
         
     def addFile(self,filename,loadtag):
         '''Add a filename and abbreviated tag map to the series.'''
@@ -314,7 +314,7 @@ class DicomSeries(object):
         return tuple(str(dcm.get(n,extravals.get(n,''))) for n in names)
 
     def getPixelData(self,index):
-        '''Get the pixel data Numpy array for file at position `index` in self.filenames, or None if there is no pixel data.'''
+        '''Get the pixel data array for file at position `index` in self.filenames, or None if no pixel data.'''
         if index not in self.imgcache:
             try:
                 dcm=dicomio.read_file(self.filenames[index])
@@ -397,7 +397,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
     def __init__(self,args,parent=None):
         QtGui.QMainWindow.__init__(self,parent)
 
-        self.srclist=[] # list of source directories
+        self.srcList=[] # list of source directories
         self.imageIndex=0 # index of selected image
         self.seriesMap=OrderedDict() # maps series table row tuples to DicomSeries object it was generated from
         self.seriesColumns=list(seriesListColumns) # keywords for columns
@@ -413,7 +413,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         
         # setup ui
         self.setupUi(self) # create UI elements based on the loaded .ui file
-        self.setWindowTitle('DicomBrowser v%s (FOR RESEARCH ONLY)'%(__version__))
+        self.setWindowTitle('DicomBrowser v%s (FOR RESEARCH ONLY)'%(__version__,))
         self.setStatus('')
         
         # connect signals
@@ -426,20 +426,20 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         self.seriesView.clicked.connect(self._seriesTableClicked)
 
         # setup the list and table models
-        self.srcmodel=QStringListModel()
-        self.seriesmodel=SeriesTableModel(self.seriesColumns)
-        self.seriesmodel.layoutChanged.connect(self._seriesTableResize)
-        self.tagmodel=QtGui.QStandardItemModel()
+        self.srcModel=QStringListModel()
+        self.seriesModel=SeriesTableModel(self.seriesColumns)
+        self.seriesModel.layoutChanged.connect(self._seriesTableResize)
+        self.tagModel=QtGui.QStandardItemModel()
 
         # assign models to views
-        self.sourceListView.setModel(self.srcmodel)
-        self.seriesView.setModel(self.seriesmodel)
-        self.tagView.setModel(self.tagmodel)
+        self.sourceListView.setModel(self.srcModel)
+        self.seriesView.setModel(self.seriesModel)
+        self.tagView.setModel(self.tagModel)
 
         # create the pyqtgraph object for viewing images
-        self.imageview=pg.ImageView()
+        self.imageView=pg.ImageView()
         layout=QtGui.QGridLayout(self.view2DGroup)
-        layout.addWidget(self.imageview)
+        layout.addWidget(self.imageView)
         
         # load the empty image placeholder into a ndarray
         qimg=QtGui.QImage(':/icons/noimage.png')
@@ -470,8 +470,8 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
     def _loadSourceThread(self):
         '''
-        This method is run in a daemon thread and continually checks self.srcQueue for a queued directory or zip file to 
-        scan for Dicom files. It calls loadDicomDir() for a given directory or loadDicomZip() for a zip file and adds the 
+        This is run in a daemon thread and continually checks self.srcQueue for a queued directory or zip file to scan
+        for Dicom files. It calls loadDicomDir() for a given directory or loadDicomZip() for a zip file and adds the
         results the self.srclist member.
         '''
         while True:
@@ -481,9 +481,10 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
                 series=loader(src,self.statusSignal.emit)
                 if series and all(len(s.filenames)>0 for s in series):
                     for s in series:
-                        s.filenames,s.loadtags=zip(*sorted(zip(s.filenames,s.loadtags))) # sort series contents by filename
+                        # sort series contents by filename
+                        s.filenames,s.loadtags=zip(*sorted(zip(s.filenames,s.loadtags)))
                         
-                    self.srclist.append((src,series))
+                    self.srcList.append((src, series))
 
                 self.updateSignal.emit()
             except Empty:
@@ -508,14 +509,14 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         '''
         self.seriesMap.clear()
 
-        for _,series in self.srclist: # add each series in each source into self.seriesMap 
+        for _,series in self.srcList: # add each series in each source into self.seriesMap
             for s in series:
                 entry=s.getTagValues(self.seriesColumns)
                 self.seriesMap[entry]=s
 
-        self.srcmodel.setStringList([s[0] for s in self.srclist])
-        self.seriesmodel.updateSeriesTable(self.seriesMap.keys())
-        self.seriesmodel.layoutChanged.emit()
+        self.srcModel.setStringList([s[0] for s in self.srcList])
+        self.seriesModel.updateSeriesTable(self.seriesMap.keys())
+        self.seriesModel.layoutChanged.emit()
 
     def _seriesTableClicked(self,item):
         '''Called when a series is clicked on, set the viewed image to be from the clicked series.'''
@@ -537,9 +538,9 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
         '''Refill the Dicom tag view, this will rejig the columns and (unfortunately) reset column sorting.'''
         series=self.getSelectedSeries()
         vpos=self.tagView.verticalScrollBar().value()
-        self.tagmodel.clear()
-        self.tagmodel.setHorizontalHeaderLabels(tagTreeColumns)
-        fillTagModel(self.tagmodel,series.getTagObject(self.imageIndex),self.filterRegex)
+        self.tagModel.clear()
+        self.tagModel.setHorizontalHeaderLabels(tagTreeColumns)
+        fillTagModel(self.tagModel, series.getTagObject(self.imageIndex), self.filterRegex)
         self.tagView.expandAll()
         self.tagView.resizeColumnToContents(0)
         self.tagView.verticalScrollBar().setValue(vpos)
@@ -558,7 +559,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
                         
         
         out=StringIO()
-        items=[self.tagmodel.itemFromIndex(i) for i in self.tagView.selectedIndexes()]
+        items=[self.tagModel.itemFromIndex(i) for i in self.tagView.selectedIndexes()]
         print(' '.join(i.data() or i.text() for i in items if i),end='',file=out)
                 
         if items[0].hasChildren():
@@ -569,7 +570,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
     def getSelectedSeries(self):
         '''Returns the DicomSeries object for the selected series, None if no series is selected.'''
         if 0<=self.selectedRow<len(self.seriesMap):
-            return self.seriesMap[self.seriesmodel.getRow(self.selectedRow)]
+            return self.seriesMap[self.seriesModel.getRow(self.selectedRow)]
 
     def setSeriesImage(self,i,autoRange=False):
         '''
@@ -594,7 +595,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
             #elif len(img.shape)==3: # multi-channel or multi-dimensional image, use average of dimensions
             #    img=np.mean(img,axis=2)
 
-            self.imageview.setImage(img.T,autoRange=autoRange,autoLevels=self.autoLevelsCheck.isChecked())
+            self.imageView.setImage(img.T, autoRange=autoRange, autoLevels=self.autoLevelsCheck.isChecked())
             self._fillTagView()
             self.imageSlider.setTickInterval(interval)
             self.imageSlider.setMaximum(maxindex)
@@ -621,7 +622,7 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
     def removeSource(self,index):
         '''Remove the source directory at the given index.'''
-        self.srclist.pop(index)
+        self.srcList.pop(index)
         self.updateSignal.emit()
 
     def addSource(self,rootdir):
@@ -632,12 +633,12 @@ class DicomBrowser(QtGui.QMainWindow,Ui_DicomBrowserWin):
 
 def main(args=[],qapp=None):
     '''
-    Default main program which starts Qt based on the command line arguments `args', sets the stylesheet if present, then
-    creates the window object and shows it. The `args' list of command line arguments is also passed to the window object
-    to pick up on specified directories. The `qapp' object would be the QApplication object if this was created elsewhere,
+    Default main program which starts Qt based on the command line arguments `args', sets the stylesheet if present,
+    then creates the window object and shows it. The `args' command line arguments list is passed to the window object
+    to pick up on specified directories. The `qapp' object would be the QApplication object if it's created elsewhere,
     otherwise it's created here. Returns the value of QApplication.exec_() if this object was created here otherwise 0.
     '''
-    if not qapp:
+    if qapp is None:
         app = QtGui.QApplication(args)
         app.setAttribute(Qt.AA_DontUseNativeMenuBar) # in OSX, forces menubar to be in window
         app.setStyle('Plastique')
@@ -652,7 +653,7 @@ def main(args=[],qapp=None):
     browser=DicomBrowser(args)
     browser.show()
 
-    return 0 if qapp else app.exec_()
+    return 0 if qapp is not None else app.exec_()
 
 
 def mainargv():
