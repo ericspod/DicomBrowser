@@ -19,9 +19,8 @@
 
 #from DicomBrowser import *
 
-__appname__='DicomBrowser'
-__version_info__=(1,3,0) # global application version, major/minor/patch
-__version__='%i.%i.%i'%__version_info__
-__author__='Eric Kerfoot'
-__copyright__="Copyright (c) 2016-8 Eric Kerfoot, King's College London, all rights reserved. Licensed under the GPL (see LICENSE.txt)."
-
+__appname__ = 'DicomBrowser'
+__version_info__ = (1, 3, 0)  # global application version, major/minor/patch
+__version__ = '%i.%i.%i' % __version_info__
+__author__ = 'Eric Kerfoot'
+__copyright__ = "Copyright (c) 2016-8 Eric Kerfoot, King's College London, all rights reserved. Licensed under the GPL (see LICENSE.txt)."
