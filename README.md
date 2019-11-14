@@ -41,7 +41,7 @@ DicomBrowser is developed and maintained by Eric Kerfoot <eric.kerfoot@kcl.ac.uk
 
 ## License
 
-Copyright (C) 2016-8 Eric Kerfoot, King's College London, all rights reserved
+Copyright (C) 2016-9 Eric Kerfoot, King's College London, all rights reserved
 
 This file is part of DicomBrowser.
 

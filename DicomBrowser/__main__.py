@@ -1,7 +1,7 @@
 #! python
 
 # DicomBrowser
-# Copyright (C) 2016-8 Eric Kerfoot, King's College London, all rights reserved
+# Copyright (C) 2016-9 Eric Kerfoot, King's College London, all rights reserved
 # 
 # This file is part of DicomBrowser.
 #
@@ -19,9 +19,9 @@
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
 try:
-    from DicomBrowser.DicomBrowser import mainargv # for use as pyinstaller script
+    from DicomBrowser.dicombrowser import mainargv # for use as pyinstaller script
 except:
-    from .DicomBrowser import mainargv # for running a module directly
+    from .dicombrowser import mainargv # for running a module directly
     
 if __name__ == '__main__':
     mainargv()

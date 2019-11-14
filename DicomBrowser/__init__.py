@@ -1,6 +1,6 @@
 
 # DicomBrowser
-# Copyright (C) 2016-8 Eric Kerfoot, King's College London, all rights reserved
+# Copyright (C) 2016-9 Eric Kerfoot, King's College London, all rights reserved
 # 
 # This file is part of DicomBrowser.
 #
@@ -24,3 +24,13 @@ __version_info__ = (1, 3, 0)  # global application version, major/minor/patch
 __version__ = '%i.%i.%i' % __version_info__
 __author__ = 'Eric Kerfoot'
 __copyright__ = "Copyright (c) 2016-9 Eric Kerfoot, King's College London, all rights reserved. Licensed under the GPL (see LICENSE.txt)."
+
+
+import os, sys
+
+scriptdir = os.path.dirname(os.path.abspath(__file__))  # path of the current file
+
+# this allows the script to be run directly from the repository without having to install pydicom or pyqtgraph
+if os.path.isdir(scriptdir + '/../pydicom'):
+    sys.path.append(scriptdir + '/../pydicom')
+    sys.path.append(scriptdir + '/../pyqtgraph')
