@@ -25,15 +25,78 @@ from operator import itemgetter
 
 
 try:  # PyQt4 and 5 support
-    from PyQt5 import QtGui, QtCore, uic
-    from PyQt5.QtCore import Qt, QStringListModel
+    from PyQt5 import QtGui, QtCore
+    from PyQt5.QtCore import Qt
 except ImportError:
-    from PyQt4 import QtGui, QtCore, uic
+    from PyQt4 import QtGui, QtCore
     from PyQt4.QtCore import Qt
-    from PyQt4.QtGui import QStringListModel
     
 from .dicom import keywordNameMap
     
+
+def fillTags(model,dcm, columns,regex=None, maxValueSize=256):
+    """Fill the model with the tags from `dcm`."""
+    try:
+        regex = re.compile(str(regex), re.DOTALL)
+    except:
+        regex = ''  # no regex or bad pattern
+
+    def _datasetToItem(parent, d):
+        '''Add every element in `d' to the QStandardItem object `parent', this will be recursive for list elements.'''
+        for elem in d:
+            value = _elemToValue(elem)
+            tag = '(%04x, %04x)' % (elem.tag.group, elem.tag.elem)
+            parent1 = QtGui.QStandardItem(str(elem.name))
+            tagitem = QtGui.QStandardItem(tag)
+
+            if isinstance(value, str):
+                origvalue = value
+
+                if len(value) > maxValueSize:
+                    origvalue = repr(value)
+                    value = value[:maxValueSize] + '...'
+
+                try:
+                    value = value.decode('ascii')
+                    if '\n' in value or '\r' in value:  # multiline text data should be shown as repr
+                        value = repr(value)
+                except:
+                    value = repr(value)
+
+                if not regex or re.search(regex, str(elem.name) + tag + value) is not None:
+                    item = QtGui.QStandardItem(value)
+                    # original value is stored directly or as repr() form for tag value item, used later when copying
+                    item.setData(origvalue)
+
+                    parent.appendRow([parent1, tagitem, item])
+
+            elif value is not None and len(value) > 0:
+                parent.appendRow([parent1, tagitem])
+                for v in value:
+                    parent1.appendRow(v)
+
+    def _elemToValue(elem):
+        '''Return the value in `elem', which will be a string or a list of QStandardItem objects if elem.VR=='SQ'.'''
+        value = None
+        if elem.VR == 'SQ':
+            value = []
+
+            for i, item in enumerate(elem):
+                parent1 = QtGui.QStandardItem('%s %i' % (elem.name, i))
+                _datasetToItem(parent1, item)
+
+                if not regex or parent1.hasChildren():  # discard sequences whose children have been filtered out
+                    value.append(parent1)
+
+        elif elem.name != 'Pixel Data':
+            value = str(elem.value)
+
+        return value
+
+    tparent = QtGui.QStandardItem('Tags')  # create a parent node every tag is a child of, used for copying all tag data
+    model.appendRow([tparent])
+    _datasetToItem(tparent, dcm)
+        
 
 class SeriesTableModel(QtCore.QAbstractTableModel):
     """This manages the list of series with a sorting feature."""
@@ -79,65 +142,6 @@ class TagItemModel(QtGui.QStandardItemModel):
     """This manages a list of tags from a single Dicom file."""
     
     def fillTags(self,dcm, columns,regex=None, maxValueSize=256):
-        try:
-            regex = re.compile(str(regex), re.DOTALL)
-        except:
-            regex = ''  # no regex or bad pattern
-    
-        def _datasetToItem(parent, d):
-            '''Add every element in `d' to the QStandardItem object `parent', this will be recursive for list elements.'''
-            for elem in d:
-                value = _elemToValue(elem)
-                tag = '(%04x, %04x)' % (elem.tag.group, elem.tag.elem)
-                parent1 = QtGui.QStandardItem(str(elem.name))
-                tagitem = QtGui.QStandardItem(tag)
-    
-                if isinstance(value, str):
-                    origvalue = value
-    
-                    if len(value) > maxValueSize:
-                        origvalue = repr(value)
-                        value = value[:maxValueSize] + '...'
-    
-                    try:
-                        value = value.decode('ascii')
-                        if '\n' in value or '\r' in value:  # multiline text data should be shown as repr
-                            value = repr(value)
-                    except:
-                        value = repr(value)
-    
-                    if not regex or re.search(regex, str(elem.name) + tag + value) is not None:
-                        item = QtGui.QStandardItem(value)
-                        # original value is stored directly or as repr() form for tag value item, used later when copying
-                        item.setData(origvalue)
-    
-                        parent.appendRow([parent1, tagitem, item])
-    
-                elif value is not None and len(value) > 0:
-                    parent.appendRow([parent1, tagitem])
-                    for v in value:
-                        parent1.appendRow(v)
-    
-        def _elemToValue(elem):
-            '''Return the value in `elem', which will be a string or a list of QStandardItem objects if elem.VR=='SQ'.'''
-            value = None
-            if elem.VR == 'SQ':
-                value = []
-    
-                for i, item in enumerate(elem):
-                    parent1 = QtGui.QStandardItem('%s %i' % (elem.name, i))
-                    _datasetToItem(parent1, item)
-    
-                    if not regex or parent1.hasChildren():  # discard sequences whose children have been filtered out
-                        value.append(parent1)
-    
-            elif elem.name != 'Pixel Data':
-                value = str(elem.value)
-    
-            return value
-
         self.clear()
         self.setHorizontalHeaderLabels(columns)
-        tparent = QtGui.QStandardItem('Tags')  # create a parent node every tag is a child of, used for copying all tag data
-        self.appendRow([tparent])
-        _datasetToItem(tparent, dcm)
+        fillTags(self,dcm, columns,regex, maxValueSize)
