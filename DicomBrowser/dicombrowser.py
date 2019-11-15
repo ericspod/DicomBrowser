@@ -1,23 +1,23 @@
 # DicomBrowser
 # Copyright (C) 2016-9 Eric Kerfoot, King's College London, all rights reserved
-# 
+#
 # This file is part of DicomBrowser.
 #
 # DicomBrowser is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
 # the Free Software Foundation, either version 3 of the License, or
 # (at your option) any later version.
-# 
+#
 # DicomBrowser is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 # GNU General Public License for more details.
-# 
+#
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
-'''
+"""
 DicomBrowser - simple lightweight Dicom browsing application. 
-'''
+"""
 
 from __future__ import print_function
 import sys, os, threading, re
@@ -51,18 +51,19 @@ from .models import SeriesTableModel, TagItemModel
 
 # Load the ui file from the resource, removing the "resources" tag so that uic doesn't try (and fail) to load resources.
 # This allows loading the UI at runtime rather than generating a .py file with pyuic not cross-compatible with PyQt4/5.
-with closing(QtCore.QFile(':/layout/DicomBrowserWin.ui')) as uiFile:
+with closing(QtCore.QFile(":/layout/DicomBrowserWin.ui")) as uiFile:
     if uiFile.open(QtCore.QFile.ReadOnly):
-        ui = bytes(uiFile.readAll()).decode('utf-8')
-        ui = re.sub('<resources>.*</resources>', '', ui, flags=re.DOTALL)  # get rid of the resources section in the XML
+        ui = bytes(uiFile.readAll()).decode("utf-8")
+        ui = re.sub("<resources>.*</resources>", "", ui, flags=re.DOTALL)  # get rid of the resources section in the XML
         Ui_DicomBrowserWin, _ = uic.loadUiType(StringIO(ui))  # create a local type definition
 
 
 class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
-    '''
+    """
     The window class for the app which implements the UI functionality and the directory loading thread. It 
     inherits from the type loaded from the .ui file in the resources. 
-    '''
+    """
+
     statusSignal = QtCore.pyqtSignal(str, int, int)  # signal for updating the status bar asynchronously
     updateSignal = QtCore.pyqtSignal()  # signal for updating the source list and series table
 
@@ -74,8 +75,8 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
         self.seriesMap = OrderedDict()  # maps series table row tuples to DicomSeries object it was generated from
         self.seriesColumns = list(seriesListColumns)  # keywords for columns
         self.selectedRow = -1  # selected series row
-        self.lastDir = '.'  # last loaded directory root
-        self.filterRegex = ''  # regular expression to filter tags by
+        self.lastDir = "."  # last loaded directory root
+        self.filterRegex = ""  # regular expression to filter tags by
 
         # create the directory queue and loading thread objects
         self.srcQueue = Queue()  # queue of directories to load
@@ -85,8 +86,8 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
 
         # setup ui
         self.setupUi(self)  # create UI elements based on the loaded .ui file
-        self.setWindowTitle('DicomBrowser v%s (FOR RESEARCH ONLY)' % (__version__,))
-        self.setStatus('')
+        self.setWindowTitle("DicomBrowser v%s (FOR RESEARCH ONLY)" % (__version__,))
+        self.setStatus("")
 
         # connect signals
         self.importDirButton.clicked.connect(self._openDirDialog)
@@ -114,7 +115,7 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
         layout.addWidget(self.imageView)
 
         # load the empty image placeholder into a ndarray
-        qimg = QtGui.QImage(':/icons/noimage.png')
+        qimg = QtGui.QImage(":/icons/noimage.png")
         bytedata = qimg.constBits().asstring(qimg.width() * qimg.height())
         self.noimg = np.ndarray((qimg.width(), qimg.height()), dtype=np.ubyte, buffer=bytedata)
 
@@ -124,28 +125,28 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
                 self.addSource(i)
 
         # override CTRL+C in the tag tree to copy a fuller set of tag data to the clipboard
-        QtGui.QShortcut(QtGui.QKeySequence('Ctrl+c'), self.tagView).activated.connect(self._setClipboard)
+        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+c"), self.tagView).activated.connect(self._setClipboard)
 
     def keyPressEvent(self, e):
-        '''Close the window if escape is pressed, otherwise do as inherited.'''
+        """Close the window if escape is pressed, otherwise do as inherited."""
         if e.key() == Qt.Key_Escape:
             self.close()
         else:
             QtGui.QMainWindow.keyPressEvent(self, e)
 
     def show(self):
-        '''Calls the inherited show() method then sets the splitter positions.'''
+        """Calls the inherited show() method then sets the splitter positions."""
         QtGui.QMainWindow.show(self)
         self.listSplit.moveSplitter(120, 1)
         self.seriesSplit.moveSplitter(80, 1)
         self.viewMetaSplitter.moveSplitter(600, 1)
 
     def _loadSourceThread(self):
-        '''
+        """
         This is run in a daemon thread and continually checks self.srcQueue for a queued directory or zip file to scan
         for Dicom files. It calls loadDicomDir() for a given directory or loadDicomZip() for a zip file and adds the
         results the self.srclist member.
-        '''
+        """
         while True:
             try:
                 src = self.srcQueue.get(True, 0.5)
@@ -164,22 +165,22 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
                 pass
 
     def _openDirDialog(self):
-        '''Opens the open file dialog to choose a directory to scan for Dicoms.'''
-        rootdir = str(QtGui.QFileDialog.getExistingDirectory(self, 'Choose Source Directory', self.lastDir))
+        """Opens the open file dialog to choose a directory to scan for Dicoms."""
+        rootdir = str(QtGui.QFileDialog.getExistingDirectory(self, "Choose Source Directory", self.lastDir))
         if rootdir:
             self.addSource(rootdir)
 
     def _openZipDialog(self):
-        '''Opens the open file dialog to choose a zip file to scan for Dicoms.'''
-        zipfile = QtGui.QFileDialog.getOpenFileName(self, 'Choose Zip File', self.lastDir, 'Zip Files (*.zip)')
+        """Opens the open file dialog to choose a zip file to scan for Dicoms."""
+        zipfile = QtGui.QFileDialog.getOpenFileName(self, "Choose Zip File", self.lastDir, "Zip Files (*.zip)")
         if zipfile[0]:
             self.addSource(zipfile[0])
 
     def _updateSeriesTable(self):
-        '''
+        """
         Updates the self.seriesMap object from self.srclist, and refills the self.srcmodel object. This will refresh 
         the list of source directories and the table of available series.
-        '''
+        """
         self.seriesMap.clear()
 
         for _, series in self.srcList:  # add each series in each source into self.seriesMap
@@ -192,23 +193,23 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
         self.seriesModel.layoutChanged.emit()
 
     def _seriesTableClicked(self, item):
-        '''Called when a series is clicked on, set the viewed image to be from the clicked series.'''
+        """Called when a series is clicked on, set the viewed image to be from the clicked series."""
         self.selectedRow = item.row()
         self.setSeriesImage(self.imageSlider.value(), True)
 
     def _seriesTableResize(self):
-        '''Resizes self.seriesView columns to contents, setting the last section to stretch.'''
+        """Resizes self.seriesView columns to contents, setting the last section to stretch."""
         self.seriesView.horizontalHeader().setStretchLastSection(False)
         self.seriesView.resizeColumnsToContents()
         self.seriesView.horizontalHeader().setStretchLastSection(True)
 
     def _setFilterString(self, regex):
-        '''Set the filtering regex to be `regex'.'''
+        """Set the filtering regex to be `regex'."""
         self.filterRegex = regex
         self._fillTagView()
 
     def _fillTagView(self):
-        '''Refill the Dicom tag view, this will rejig the columns and (unfortunately) reset column sorting.'''
+        """Refill the Dicom tag view, this will rejig the columns and (unfortunately) reset column sorting."""
         series = self.getSelectedSeries()
         vpos = self.tagView.verticalScrollBar().value()
         self.tagModel.fillTags(series.getTagObject(self.imageIndex), tagTreeColumns, self.filterRegex)
@@ -217,23 +218,23 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
         self.tagView.verticalScrollBar().setValue(vpos)
 
     def _setClipboard(self):
-        '''Set the clipboard to contain fuller tag data when CTRL+C is applied to a tag line in the tree.'''
+        """Set the clipboard to contain fuller tag data when CTRL+C is applied to a tag line in the tree."""
 
         def printChildren(child, level, out):
             for r in range(child.rowCount()):
-                print('', file=out)
+                print("", file=out)
 
                 for c in range(child.columnCount()):
                     cc = child.child(r, c)
 
                     if cc is not None:
-                        print(' ' * level, cc.text(), file=out, end='')
+                        print(" " * level, cc.text(), file=out, end="")
                         if cc.hasChildren():
                             printChildren(cc, level + 1, out)
 
         clipout = StringIO()
         items = [self.tagModel.itemFromIndex(i) for i in self.tagView.selectedIndexes()]
-        print(' '.join(i.data() or i.text() for i in items if i), end='', file=clipout)
+        print(" ".join(i.data() or i.text() for i in items if i), end="", file=clipout)
 
         if items[0].hasChildren():
             printChildren(items[0], 1, clipout)
@@ -241,15 +242,15 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
         QtGui.QApplication.clipboard().setText(clipout.getvalue())
 
     def getSelectedSeries(self):
-        '''Returns the DicomSeries object for the selected series, None if no series is selected.'''
+        """Returns the DicomSeries object for the selected series, None if no series is selected."""
         if 0 <= self.selectedRow < len(self.seriesMap):
             return self.seriesMap[self.seriesModel.getRow(self.selectedRow)]
 
     def setSeriesImage(self, i, autoRange=False):
-        '''
+        """
         Set the view image to be that at index `i' of the selected series. The `autoRange' boolean value sets whether
         the data value range is reset or not when this is done. The tag table is also set to that of image `i'.
-        '''
+        """
         series = self.getSelectedSeries()
         if series:
             maxindex = len(series.filenames) - 1
@@ -273,14 +274,14 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
             self.imageSlider.setTickInterval(interval)
             self.imageSlider.setMaximum(maxindex)
             self.numLabel.setText(str(self.imageIndex))
-            self.view2DGroup.setTitle('2D View - ' + os.path.basename(series.filenames[self.imageIndex]))
+            self.view2DGroup.setTitle("2D View - " + os.path.basename(series.filenames[self.imageIndex]))
             self.view2DGroup.setToolTip(series.filenames[self.imageIndex])
 
     def setStatus(self, msg, progress=0, progressmax=0):
-        '''
+        """
         Set the status bar with message `msg' with progress set to `progress' out of `progressmax', or hide the status 
         elements if `msg' is empty or None.
-        '''
+        """
         if not msg:
             progress = 0
             progressmax = 0
@@ -294,34 +295,34 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
         self.statusProgressBar.setValue(progress)
 
     def removeSource(self, index):
-        '''Remove the source directory at the given index.'''
+        """Remove the source directory at the given index."""
         self.srcList.pop(index)
         self.updateSignal.emit()
 
     def addSource(self, rootdir):
-        '''Add the given directory to the queue of directories to load and set the self.lastDir value to its parent.'''
+        """Add the given directory to the queue of directories to load and set the self.lastDir value to its parent."""
         self.srcQueue.put(rootdir)
         self.lastDir = os.path.dirname(rootdir)
 
 
 def main(args=[], qapp=None):
-    '''
+    """
     Default main program which starts Qt based on the command line arguments `args', sets the stylesheet if present,
     then creates the window object and shows it. The `args' command line arguments list is passed to the window object
     to pick up on specified directories. The `qapp' object would be the QApplication object if it's created elsewhere,
     otherwise it's created here. Returns the value of QApplication.exec_() if this object was created here otherwise 0.
-    '''
+    """
     if qapp is None:
         app = QtGui.QApplication(args)
         app.setAttribute(Qt.AA_DontUseNativeMenuBar)  # in OSX, forces menubar to be in window
-        app.setStyle('Plastique')
+        app.setStyle("Plastique")
 
         # load the stylesheet included as a Qt resource
-        with closing(QtCore.QFile(':/css/DefaultUIStyle.css')) as f:
+        with closing(QtCore.QFile(":/css/DefaultUIStyle.css")) as f:
             if f.open(QtCore.QFile.ReadOnly):
-                app.setStyleSheet(bytes(f.readAll()).decode('UTF-8'))
+                app.setStyleSheet(bytes(f.readAll()).decode("UTF-8"))
             else:
-                print('Failed to read %r' % f.fileName())
+                print("Failed to read %r" % f.fileName())
 
     browser = DicomBrowser(args)
     browser.show()
@@ -330,10 +331,10 @@ def main(args=[], qapp=None):
 
 
 def mainargv():
-    '''setuptools compatible entry point.'''
+    """setuptools compatible entry point."""
     freeze_support()
     sys.exit(main(sys.argv))
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     mainargv()
