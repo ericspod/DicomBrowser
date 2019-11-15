@@ -35,6 +35,14 @@ application without installing Python or the necessary packages.
 
 Directories provided as command line arguments will be imported, any other arguments or files will be ignored.
 
+
+## Docker
+
+A Dockerfile is included, to run the created image "dicombrowser" on a X Windows host use a command like the following:
+```
+docker run -ti --rm --net=host --env="DISPLAY" --volume="$HOME/.Xauthority:/root/.Xauthority:rw" dicombrowser
+```
+
 ## Authors
 
 DicomBrowser is developed and maintained by Eric Kerfoot <eric.kerfoot@kcl.ac.uk>.
