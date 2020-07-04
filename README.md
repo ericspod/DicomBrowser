@@ -38,7 +38,11 @@ Directories provided as command line arguments will be imported, any other argum
 
 ## Docker
 
-A Dockerfile is included, to run the created image "dicombrowser" on a X Windows host use a command like the following:
+A Dockerfile is included, to build the image with the following command:
+```
+docker build . --tag dicombrowser:latest
+```
+and then to run the created image "dicombrowser" on a X Windows host use a command like the following:
 ```
 docker run -ti --rm --net=host --env="DISPLAY" --volume="$HOME/.Xauthority:/root/.Xauthority:rw" dicombrowser
 ```
