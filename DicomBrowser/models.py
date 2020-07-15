@@ -19,17 +19,11 @@
 DicomBrowser - simple lightweight Dicom browsing application. 
 """
 
-from __future__ import print_function
 import re
 from operator import itemgetter
 
-
-try:  # PyQt4 and 5 support
-    from PyQt5 import QtGui, QtCore
-    from PyQt5.QtCore import Qt
-except ImportError:
-    from PyQt4 import QtGui, QtCore
-    from PyQt4.QtCore import Qt
+from PyQt5 import QtGui, QtCore
+from PyQt5.QtCore import Qt
 
 from .dicom import keywordNameMap
 
