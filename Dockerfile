@@ -3,20 +3,18 @@
 #
 #    docker run -ti --rm --net=host --env="DISPLAY" --volume="$HOME/.Xauthority:/root/.Xauthority:rw" dicombrowser
 
-FROM ubuntu:16.04
 
-RUN apt update
-RUN apt install x11-apps libgl1-mesa-glx qt5-default libxrandr2 wget -y --fix-missing
+FROM alpine:3.12
 
-RUN wget -q https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
-RUN /bin/bash Miniconda3-latest-Linux-x86_64.sh -b -p /miniconda3
-RUN echo "export PATH=/miniconda3/bin:$PATH" > /root/.bashrc
+RUN apk update
+RUN apk add py3-qt5 py3-numpy py3-pip ttf-ubuntu-font-family
+
+RUN pip3 install pydicom pyqtgraph
 
 WORKDIR /DicomBrowser
 
 COPY . /DicomBrowser
 
-RUN /miniconda3/bin/conda install pyqt numpy 
-RUN /miniconda3/bin/conda install -c conda-forge pydicom
+RUN rm -rf /DicomBrowser/pyqtgraph /DicomBrowser/pydicom
 
-CMD ["/miniconda3/bin/python","-m","DicomBrowser"]
+CMD ["python3","-m","DicomBrowser"]
