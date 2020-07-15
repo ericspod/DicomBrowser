@@ -29,7 +29,7 @@ from queue import Queue, Empty
 from io import StringIO
 
 try:  # PyQt4 and 5 support
-    from PyQt5 import QtGui, QtCore, uic
+    from PyQt5 import QtGui, QtCore, uic, QtWidgets
     from PyQt5.QtCore import Qt, QStringListModel
     from . import Resources_rc5  # import resources manually since we have to do this to get the ui file
 except ImportError:
@@ -58,7 +58,7 @@ with closing(QtCore.QFile(":/layout/DicomBrowserWin.ui")) as uiFile:
         Ui_DicomBrowserWin, _ = uic.loadUiType(StringIO(ui))  # create a local type definition
 
 
-class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
+class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
     """
     The window class for the app which implements the UI functionality and the directory loading thread. It 
     inherits from the type loaded from the .ui file in the resources. 
@@ -239,7 +239,7 @@ class DicomBrowser(QtGui.QMainWindow, Ui_DicomBrowserWin):
         if items[0].hasChildren():
             printChildren(items[0], 1, clipout)
 
-        QtGui.QApplication.clipboard().setText(clipout.getvalue())
+        QtWidgets.QApplication.clipboard().setText(clipout.getvalue())
 
     def getSelectedSeries(self):
         """Returns the DicomSeries object for the selected series, None if no series is selected."""
@@ -313,7 +313,7 @@ def main(args=[], qapp=None):
     otherwise it's created here. Returns the value of QApplication.exec_() if this object was created here otherwise 0.
     """
     if qapp is None:
-        app = QtGui.QApplication(args)
+        app = QtWidgets.QApplication(args)
         app.setAttribute(Qt.AA_DontUseNativeMenuBar)  # in OSX, forces menubar to be in window
         app.setStyle("Plastique")
 
