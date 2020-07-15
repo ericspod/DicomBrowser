@@ -19,6 +19,4 @@ COPY . /DicomBrowser
 RUN /miniconda3/bin/conda install pyqt numpy 
 RUN /miniconda3/bin/conda install -c conda-forge pydicom
 
-ENV XDG_RUNTIME_DIR=/run/user/1000
-
 CMD ["/miniconda3/bin/python","-m","DicomBrowser"]
