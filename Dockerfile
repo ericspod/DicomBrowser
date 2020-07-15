@@ -17,5 +17,6 @@ WORKDIR /DicomBrowser
 COPY . /DicomBrowser
 
 RUN /miniconda3/bin/conda install pyqt numpy 
+RUN /miniconda3/bin/conda install -c conda-forge pydicom
 
 CMD ["/miniconda3/bin/python","-m","DicomBrowser"]

@@ -31,7 +31,6 @@ from PyQt5 import QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt, QStringListModel
 from . import Resources_rc  # import resources manually since we have to do this to get the ui file
 
-
 import numpy as np
 import pyqtgraph as pg
 
@@ -232,7 +231,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         if items[0].hasChildren():
             printChildren(items[0], 1, clipout)
 
-        QtGui.QApplication.clipboard().setText(clipout.getvalue())
+        QtWidgets.QApplication.clipboard().setText(clipout.getvalue())
 
     def getSelectedSeries(self):
         """Returns the DicomSeries object for the selected series, None if no series is selected."""
