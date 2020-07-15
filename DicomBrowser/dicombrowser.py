@@ -19,7 +19,6 @@
 DicomBrowser - simple lightweight Dicom browsing application. 
 """
 
-from __future__ import print_function
 import sys, os, threading, re
 from multiprocessing import freeze_support
 from contextlib import closing
@@ -28,16 +27,9 @@ from collections import OrderedDict
 from queue import Queue, Empty
 from io import StringIO
 
-try:  # PyQt4 and 5 support
-    from PyQt5 import QtGui, QtCore, uic, QtWidgets
-    from PyQt5.QtCore import Qt, QStringListModel
-    from . import Resources_rc5  # import resources manually since we have to do this to get the ui file
-except ImportError:
-    from PyQt4 import QtGui, QtCore, uic
-    from PyQt4.QtCore import Qt
-    from PyQt4.QtGui import QStringListModel
-    from . import Resources_rc4  # import resources manually since we have to do this to get the ui file
-
+from PyQt5 import QtGui, QtCore, QtWidgets, uic
+from PyQt5.QtCore import Qt, QStringListModel
+from . import Resources_rc  # import resources manually since we have to do this to get the ui file
 
 import numpy as np
 import pyqtgraph as pg
@@ -68,7 +60,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
     updateSignal = QtCore.pyqtSignal()  # signal for updating the source list and series table
 
     def __init__(self, args, parent=None):
-        QtGui.QMainWindow.__init__(self, parent)
+        super().__init__(parent)
 
         self.srcList = []  # list of source directories
         self.imageIndex = 0  # index of selected image

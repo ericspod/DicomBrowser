@@ -29,15 +29,6 @@ elif platform.system().lower() == 'windows':
 else:
     plat = 'linux'
 
-# determine PyQt version    
-try:
-    import PyQt5
-
-    qtversion = 5
-except:
-    import PyQt4
-
-    qtversion = 4
 
 long_description = '''
 This is a lightweight portable Dicom browser application written in Python. It allows Dicom directories to be loaded, 
@@ -47,8 +38,8 @@ previewing Dicom data rather than doing any sort of processing.
 
 if 'generate' in sys.argv:  # generate only, quit at this point before setup
     # generate resource file for PyQt4 or 5
-    cmd = 'pyrcc%(ver)i res/Resources.qrc > DicomBrowser/Resources_rc%(ver)i.py'
-    subprocess.check_call(cmd % {'ver': qtversion}, shell=True)
+    cmd = 'pyrcc5 res/Resources.qrc > DicomBrowser/Resources_rc.py'
+    subprocess.check_call(cmd, shell=True)
 
 elif 'app' in sys.argv:
     sys.argv.remove('app')
@@ -100,5 +91,5 @@ else:
         keywords="dicom python medical imaging pydicom pyqtgraph",
         long_description=long_description.strip(),
         entry_points={'console_scripts': ['DicomBrowser = DicomBrowser:mainargv']},
-        install_requires=['pyqtgraph', 'pydicom']
+        install_requires=['pyqtgraph', 'pydicom', 'pyqt']
     )

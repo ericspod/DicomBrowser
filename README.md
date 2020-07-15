@@ -6,7 +6,7 @@ This is intended to be a cross-platform utility suitable for previewing Dicom da
 
 ## Installation
 
-DicomBrowser requires **Python 2.7/3.\***, **PyQt4/5**, **numpy**, **pydicom** and **pyqtgraph**, the latter two are submodules of this project.
+DicomBrowser requires **Python 3.6+**, **PyQt5**, **numpy**, **pydicom** and **pyqtgraph**, the latter two are submodules of this project.
 Ensure these packages are installed, in the case of **pydicom** and **pyqtgraph** ensure the submodules are included in your clone:
 
     git clone --recursive https://github.com/ericspod/DicomBrowser.git
@@ -38,7 +38,11 @@ Directories provided as command line arguments will be imported, any other argum
 
 ## Docker
 
-A Dockerfile is included, to run the created image "dicombrowser" on a X Windows host use a command like the following:
+A Dockerfile is included, to build the image with the following command:
+```
+docker build . --tag dicombrowser:latest
+```
+and then to run the created image "dicombrowser" on a X Windows host use a command like the following:
 ```
 docker run -ti --rm --net=host --env="DISPLAY" --volume="$HOME/.Xauthority:/root/.Xauthority:rw" dicombrowser
 ```
