@@ -47,6 +47,8 @@ and then to run the created image "dicombrowser" on a X Windows host use a comma
 docker run -ti --rm --net=host --env="DISPLAY" --volume="$HOME/.Xauthority:/root/.Xauthority:rw" dicombrowser
 ```
 
+Running `xhost +local:docker` may be necessary to add permissions and allow the container to access the X network ports.
+
 ## Authors
 
 DicomBrowser is developed and maintained by Eric Kerfoot <eric.kerfoot@kcl.ac.uk>.
