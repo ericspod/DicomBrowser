@@ -29,13 +29,13 @@ from io import StringIO
 
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt, QStringListModel
-from . import Resources_rc  # import resources manually since we have to do this to get the ui file
+from . import resources_rc  # import resources manually since we have to do this to get the ui file
 
 import numpy as np
 import pyqtgraph as pg
 
 
-from .__init__ import __version__
+from ._version import __version__
 
 from .dicom import loadDicomDir, loadDicomZip, seriesListColumns, tagTreeColumns
 from .models import SeriesTableModel, TagItemModel

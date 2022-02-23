@@ -63,7 +63,7 @@ keywordNameMap.update(extraKeywords)
 fullNameMap = {v: k for k, v in keywordNameMap.items()}  # maps full names to keywords
 
 
-def loadDicomFiles(filenames, queue):
+def load_dicom_files(filenames, queue):
     """Load the Dicom files `filenames' and put an abbreviated tag->value map for each onto `queue'."""
     for filename in filenames:
         try:
@@ -74,7 +74,7 @@ def loadDicomFiles(filenames, queue):
             pass
 
 
-def loadDicomDir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
+def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
     """
     Load all the Dicom files from `rootdir' using `numprocs' number of processes. This will attempt to load each file
     found in `rootdir' and store from each file the tags defined in loadTags. The filenames and the loaded tags for
@@ -100,7 +100,7 @@ def loadDicomDir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
 
     with closing(Pool(processes=numprocs)) as pool:
         for filesec in np.array_split(allfiles, numprocs):
-            res.append(pool.apply_async(loadDicomFiles, (filesec, queue)))
+            res.append(pool.apply_async(load_dicom_files, (filesec, queue)))
 
         # loop so long as any process is busy or there are files on the queue to process
         while any(not r.ready() for r in res) or not queue.empty():
@@ -125,7 +125,7 @@ def loadDicomDir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
 
 def loadDicomZip(filename, statusfunc=lambda s, c, n: None):
     """
-    Load Dicom images from given zip file `filename'. This uses the status callback `statusfunc' like loadDicomDir().
+    Load Dicom images from given zip file `filename'. This uses the status callback `statusfunc' like load_dicom_dir().
     Loaded files will have their pixel data thus avoiding the need to reload the zip file when an image is viewed but is
     at the expense of load time and memory. Return value is a sequence of DicomSeries objects in no particular order.
     """
