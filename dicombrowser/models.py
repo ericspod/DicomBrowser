@@ -15,9 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
-"""
-DicomBrowser - simple lightweight Dicom browsing application. 
-"""
+
 
 import re
 from operator import itemgetter
@@ -25,7 +23,7 @@ from operator import itemgetter
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt
 
-from .dicom import keywordNameMap
+from .dicom import KEYWORD_NAME_MAP
 
 
 def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
@@ -95,41 +93,41 @@ def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
 class SeriesTableModel(QtCore.QAbstractTableModel):
     """This manages the list of series with a sorting feature."""
 
-    def __init__(self, seriesColumns, parent=None):
+    def __init__(self, series_columns, parent=None):
         QtCore.QAbstractTableModel.__init__(self, parent)
-        self.seriesTable = []
-        self.seriesColumns = seriesColumns
+        self.series_table = []
+        self.series_columns = series_columns
         self.sortCol = 0
         self.sortOrder = Qt.AscendingOrder
 
     def rowCount(self, parent):
-        return len(self.seriesTable)
+        return len(self.series_table)
 
     def columnCount(self, parent):
-        return len(self.seriesTable[0]) if self.seriesTable else 0
+        return len(self.series_table[0]) if self.series_table else 0
 
     def sort(self, column, order):
         self.layoutAboutToBeChanged.emit()
         self.sortCol = column
         self.sortOrder = order
 
-        self.seriesTable.sort(key=itemgetter(column), reverse=order == Qt.DescendingOrder)
+        self.series_table.sort(key=itemgetter(column), reverse=order == Qt.DescendingOrder)
         self.layoutChanged.emit()
 
-    def updateSeriesTable(self, seriesTable):
-        self.seriesTable = list(seriesTable)
+    def updateSeriesTable(self, series_table):
+        self.series_table = list(series_table)
         self.sort(self.sortCol, self.sortOrder)  # sort using existing parameters
 
     def getRow(self, i):
-        return self.seriesTable[i]
+        return self.series_table[i]
 
     def headerData(self, section, orientation, role):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return keywordNameMap[self.seriesColumns[section]]
+            return KEYWORD_NAME_MAP[self.series_columns[section]]
 
     def data(self, index, role):
         if index.isValid() and role == Qt.DisplayRole:
-            return str(self.seriesTable[index.row()][index.column()])
+            return str(self.series_table[index.row()][index.column()])
 
 
 class TagItemModel(QtGui.QStandardItemModel):

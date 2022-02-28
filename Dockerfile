@@ -11,10 +11,8 @@ RUN apk add py3-qt5 py3-numpy py3-pip ttf-ubuntu-font-family
 
 RUN pip3 install pydicom pyqtgraph
 
-WORKDIR /DicomBrowser
+WORKDIR /dicombrowser
 
-COPY . /DicomBrowser
+COPY . /bicombrowser
 
-RUN rm -rf /DicomBrowser/pyqtgraph /DicomBrowser/pydicom
-
-CMD ["python3","-m","DicomBrowser"]
+CMD ["python3","-m","dicombrowser"]

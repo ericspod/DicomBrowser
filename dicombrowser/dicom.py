@@ -16,9 +16,9 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-import os, zipfile
+import os
+import zipfile
 from multiprocessing import Pool, Manager, cpu_count
-from contextlib import closing
 from pydicom import dicomio, datadict, errors
 from queue import Empty
 from io import BytesIO
@@ -27,7 +27,7 @@ import numpy as np
 
 
 # tag names of default columns in the series list, this can be changed to pull out different tag names for columns
-seriesListColumns = (
+SERIES_LIST_COLUMNS = (
     "NumImages",
     "SeriesNumber",
     "PatientName",
@@ -36,10 +36,10 @@ seriesListColumns = (
 )
 
 # names of columns in tag tree, this shouldn't ever change
-tagTreeColumns = ("Name", "Tag", "Value")
+TAG_TREE_COLUMNS = ("Name", "Tag", "Value")
 
 # list of tags to initially load when a directory is scanned, loading only these speeds up scanning immensely
-loadTags = (
+LOAD_TAGS = (
     "SeriesInstanceUID",
     "TriggerTime",
     "PatientName",
@@ -48,7 +48,7 @@ loadTags = (
 )
 
 # keyword/full name pairs for extra properties not represented as Dicom tags
-extraKeywords = {
+EXTRA_KEYWORDS = {
     "NumImages": "# Images",
     "TimestepSpec": "Timestep Info",
     "StartTime": "Start Time",
@@ -57,10 +57,10 @@ extraKeywords = {
 }
 
 # maps keywords to their full names
-keywordNameMap = {v[4]: v[2] for v in datadict.DicomDictionary.values()}
-keywordNameMap.update(extraKeywords)
+KEYWORD_NAME_MAP = {v[4]: v[2] for v in datadict.DicomDictionary.values()}
+KEYWORD_NAME_MAP.update(EXTRA_KEYWORDS)
 
-fullNameMap = {v: k for k, v in keywordNameMap.items()}  # maps full names to keywords
+FULL_NAME_MAP = {v: k for k, v in KEYWORD_NAME_MAP.items()}  # maps full names to keywords
 
 
 def load_dicom_files(filenames, queue):
@@ -68,7 +68,7 @@ def load_dicom_files(filenames, queue):
     for filename in filenames:
         try:
             dcm = dicomio.read_file(filename, stop_before_pixels=True)
-            tags = {t: dcm.get(t) for t in loadTags if t in dcm}
+            tags = {t: dcm.get(t) for t in LOAD_TAGS if t in dcm}
             queue.put((filename, tags))
         except errors.InvalidDicomError:
             pass
@@ -98,9 +98,10 @@ def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
     if not numfiles:
         return []
 
-    with closing(Pool(processes=numprocs)) as pool:
+    with Pool(processes=numprocs) as pool:
         for filesec in np.array_split(allfiles, numprocs):
             res.append(pool.apply_async(load_dicom_files, (filesec, queue)))
+        # res = [pool.starmap_async(load_dicom_files, [(f,queue) for f in allfiles])]
 
         # loop so long as any process is busy or there are files on the queue to process
         while any(not r.ready() for r in res) or not queue.empty():
@@ -110,7 +111,7 @@ def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
                 if seriesid not in series:
                     series[seriesid] = DicomSeries(seriesid, rootdir)
 
-                series[seriesid].addFile(filename, dcm)
+                series[seriesid].add_file(filename, dcm)
             except Empty:  # from queue.get(), keep trying so long as the loop condition is true
                 pass
 
@@ -123,7 +124,7 @@ def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
     return list(series.values())
 
 
-def loadDicomZip(filename, statusfunc=lambda s, c, n: None):
+def load_dicom_zip(filename, statusfunc=lambda s, c, n: None):
     """
     Load Dicom images from given zip file `filename'. This uses the status callback `statusfunc' like load_dicom_dir().
     Loaded files will have their pixel data thus avoiding the need to reload the zip file when an image is viewed but is
@@ -159,7 +160,7 @@ def loadDicomZip(filename, statusfunc=lambda s, c, n: None):
                     img = None
 
                 s = series[seriesid]
-                s.addFile(nfilename, dcm)
+                s.add_file(nfilename, dcm)
                 s.tagcache[len(s.filenames) - 1] = dcm
                 s.imgcache[len(s.filenames) - 1] = img
 
@@ -188,12 +189,12 @@ class DicomSeries(object):
         self.imgcache = {} # image data cache, mapping index in self.filenames to arrays or None for non-images files
         self.tagcache = {} # tag values cache, mapping index in self.filenames to OrderedDict of tag->(name,value) maps
 
-    def addFile(self, filename, loadtag):
+    def add_file(self, filename, loadtag):
         """Add a filename and abbreviated tag map to the series."""
         self.filenames.append(filename)
         self.loadtags.append(loadtag)
 
-    def getTagObject(self, index):
+    def get_tag_object(self, index):
         """Get the object storing tag information from Dicom file at the given index."""
         if index not in self.tagcache:
             dcm = dicomio.read_file(self.filenames[index], stop_before_pixels=True)
@@ -201,9 +202,9 @@ class DicomSeries(object):
 
         return self.tagcache[index]
 
-    def getExtraTagValues(self):
+    def get_extra_tag_values(self):
         """Return the extra tag values calculated from the series tag info stored in self.filenames."""
-        start, interval, numtimes = self.getTimestepSpec()
+        start, interval, numtimes = self.get_timestep_spec()
         extravals = {
             "NumImages": len(self.filenames),
             "TimestepSpec": "start: %i, interval: %i, # Steps: %i"
@@ -215,20 +216,20 @@ class DicomSeries(object):
 
         return extravals
 
-    def getTagValues(self, names, index=0):
+    def get_tag_values(self, names, index=0):
         """Get the tag values for tag names listed in `names' for image at the given index."""
         if not self.filenames:
             return ()
 
-        dcm = self.getTagObject(index)
-        extravals = self.getExtraTagValues()
+        dcm = self.get_tag_object(index)
+        extravals = self.get_extra_tag_values()
 
         # TODO: kludge? More general solution of telling series apart
         # dcm.SeriesDescription=dcm.get('SeriesDescription',dcm.get('SeriesInstanceUID','???'))
 
         return tuple(str(dcm.get(n, extravals.get(n, ""))) for n in names)
 
-    def getPixelData(self, index):
+    def get_pixel_data(self, index):
         """Get the pixel data array for file at position `index` in self.filenames, or None if no pixel data."""
         if index not in self.imgcache:
             try:
@@ -243,12 +244,12 @@ class DicomSeries(object):
 
         return self.imgcache[index]
 
-    def addSeries(self, series):
+    def add_series(self, series):
         """Add every loaded dcm file from DicomSeries object `series` into this series."""
         for f, loadtag in zip(series.filenames, series.loadtags):
             self.addFile(f, loadtag)
 
-    def getTimestepSpec(self, tag="TriggerTime"):
+    def get_timestep_spec(self, tag="TriggerTime"):
         """Returns (start time, interval, num timesteps) triple."""
         times = sorted(set(int(loadtag.get(tag, 0)) for loadtag in self.loadtags))
 

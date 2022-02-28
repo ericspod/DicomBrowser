@@ -54,5 +54,6 @@ else:
         keywords="dicom python medical imaging pydicom pyqtgraph",
         long_description=long_description.strip(),
         entry_points={"console_scripts": ["dicombrowser = dicombrowser:mainargv"]},
-        install_requires=requirements
+        install_requires=requirements,
+        python_requires='>=3.7',
     )

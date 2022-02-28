@@ -1,4 +1,4 @@
 pyqtgraph
-pyqt
+pyqt5
 numpy
 pydicom

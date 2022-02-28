@@ -37,7 +37,7 @@ import pyqtgraph as pg
 
 from ._version import __version__
 
-from .dicom import loadDicomDir, loadDicomZip, seriesListColumns, tagTreeColumns
+from .dicom import load_dicom_dir, load_dicom_zip, SERIES_LIST_COLUMNS, TAG_TREE_COLUMNS
 from .models import SeriesTableModel, TagItemModel
 
 
@@ -65,7 +65,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.srcList = []  # list of source directories
         self.imageIndex = 0  # index of selected image
         self.seriesMap = OrderedDict()  # maps series table row tuples to DicomSeries object it was generated from
-        self.seriesColumns = list(seriesListColumns)  # keywords for columns
+        self.seriesColumns = list(SERIES_LIST_COLUMNS)  # keywords for columns
         self.selectedRow = -1  # selected series row
         self.lastDir = "."  # last loaded directory root
         self.filterRegex = ""  # regular expression to filter tags by
@@ -142,7 +142,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         while True:
             try:
                 src = self.srcQueue.get(True, 0.5)
-                loader = loadDicomDir if os.path.isdir(src) else loadDicomZip
+                loader = load_dicom_dir if os.path.isdir(src) else load_dicom_zip
                 series = loader(src, self.statusSignal.emit)
 
                 if series and all(len(s.filenames) > 0 for s in series):
@@ -177,7 +177,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
         for _, series in self.srcList:  # add each series in each source into self.seriesMap
             for s in series:
-                entry = s.getTagValues(self.seriesColumns)
+                entry = s.get_tag_values(self.seriesColumns)
                 self.seriesMap[entry] = s
 
         self.srcModel.setStringList([s[0] for s in self.srcList])
@@ -204,7 +204,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         """Refill the Dicom tag view, this will rejig the columns and (unfortunately) reset column sorting."""
         series = self.getSelectedSeries()
         vpos = self.tagView.verticalScrollBar().value()
-        self.tagModel.fillTags(series.getTagObject(self.imageIndex), tagTreeColumns, self.filterRegex)
+        self.tagModel.fillTags(series.get_tag_object(self.imageIndex), TAG_TREE_COLUMNS, self.filterRegex)
         self.tagView.expandAll()
         self.tagView.resizeColumnToContents(0)
         self.tagView.verticalScrollBar().setValue(vpos)
@@ -247,7 +247,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         if series:
             maxindex = len(series.filenames) - 1
             self.imageIndex = np.clip(i, 0, maxindex)
-            img = series.getPixelData(self.imageIndex)  # image matrix
+            img = series.get_pixel_data(self.imageIndex)  # image matrix
             interval = 1  # tick interval on the slider
 
             # choose a more sensible tick interval if there's a lot of images
