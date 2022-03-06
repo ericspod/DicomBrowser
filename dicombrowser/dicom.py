@@ -18,7 +18,7 @@
 
 import os
 import zipfile
-from multiprocessing import Pool, Manager, cpu_count
+from multiprocessing import Pool, Manager, Queue
 from pydicom import dicomio, datadict, errors
 from queue import Empty
 from io import BytesIO
@@ -63,15 +63,14 @@ KEYWORD_NAME_MAP.update(EXTRA_KEYWORDS)
 FULL_NAME_MAP = {v: k for k, v in KEYWORD_NAME_MAP.items()}  # maps full names to keywords
 
 
-def load_dicom_files(filenames, queue):
-    """Load the Dicom files `filenames' and put an abbreviated tag->value map for each onto `queue'."""
-    for filename in filenames:
-        try:
-            dcm = dicomio.read_file(filename, stop_before_pixels=True)
-            tags = {t: dcm.get(t) for t in LOAD_TAGS if t in dcm}
-            queue.put((filename, tags))
-        except errors.InvalidDicomError:
-            pass
+def load_dicom_file(filename, queue):
+    """Load the Dicom file `filename` and put an abbreviated tag->value map onto `queue`."""
+    try:
+        dcm = dicomio.read_file(filename, stop_before_pixels=True)
+        tags = {t: dcm.get(t) for t in LOAD_TAGS if t in dcm}
+        queue.put((filename, tags))
+    except errors.InvalidDicomError:
+        pass
 
 
 def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
@@ -87,38 +86,34 @@ def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
     for root, _, files in os.walk(rootdir):
         allfiles += [os.path.join(root, f) for f in files if f.lower() != "dicomdir"]
 
-    numprocs = numprocs or cpu_count()
-    m = Manager()
-    queue = m.Queue()
     numfiles = len(allfiles)
-    res = []
     series = {}
     count = 0
 
     if not numfiles:
         return []
 
-    with Pool(processes=numprocs) as pool:
-        for filesec in np.array_split(allfiles, numprocs):
-            res.append(pool.apply_async(load_dicom_files, (filesec, queue)))
-        # res = [pool.starmap_async(load_dicom_files, [(f,queue) for f in allfiles])]
-
-        # loop so long as any process is busy or there are files on the queue to process
-        while any(not r.ready() for r in res) or not queue.empty():
-            try:
-                filename, dcm = queue.get(False)
-                seriesid = dcm.get("SeriesInstanceUID", "???")
-                if seriesid not in series:
-                    series[seriesid] = DicomSeries(seriesid, rootdir)
-
-                series[seriesid].add_file(filename, dcm)
-            except Empty:  # from queue.get(), keep trying so long as the loop condition is true
-                pass
-
-            count += 1
-            # update status only 100 times, doing it too frequently really slows things down
-            if numfiles < 100 or count % (numfiles // 100) == 0:
-                statusfunc("Loading DICOM files", count, numfiles)
+    with Manager() as m:
+        queue = m.Queue()
+        with Pool(processes=numprocs) as pool:
+            res = pool.starmap_async(load_dicom_file, [(f,queue) for f in allfiles])
+    
+            # loop so long as any process is busy or there are files on the queue to process
+            while not res.ready() or not queue.empty():
+                try:
+                    filename, dcm = queue.get(False)
+                    seriesid = dcm.get("SeriesInstanceUID", "???")
+                    if seriesid not in series:
+                        series[seriesid] = DicomSeries(seriesid, rootdir)
+    
+                    series[seriesid].add_file(filename, dcm)
+                except Empty:  # from queue.get(), keep trying so long as the loop condition is true
+                    pass
+    
+                count += 1
+                # update status only 100 times, doing it too frequently really slows things down
+                if numfiles < 100 or count % (numfiles // 100) == 0:
+                    statusfunc("Loading DICOM files", count, numfiles)
 
     statusfunc("", 0, 0)
     return list(series.values())

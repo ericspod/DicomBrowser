@@ -103,7 +103,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
         # create the pyqtgraph object for viewing images
         self.imageView = pg.ImageView()
-        layout = QtGui.QGridLayout(self.view2DGroup)
+        layout = QtWidgets.QGridLayout(self.view2DGroup)
         layout.addWidget(self.imageView)
 
         # load the empty image placeholder into a ndarray
@@ -117,18 +117,18 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
                 self.addSource(i)
 
         # override CTRL+C in the tag tree to copy a fuller set of tag data to the clipboard
-        QtGui.QShortcut(QtGui.QKeySequence("Ctrl+c"), self.tagView).activated.connect(self._setClipboard)
+        QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+c"), self.tagView).activated.connect(self._setClipboard)
 
     def keyPressEvent(self, e):
         """Close the window if escape is pressed, otherwise do as inherited."""
         if e.key() == Qt.Key_Escape:
             self.close()
         else:
-            QtGui.QMainWindow.keyPressEvent(self, e)
+            QtWidgets.QMainWindow.keyPressEvent(self, e)
 
     def show(self):
         """Calls the inherited show() method then sets the splitter positions."""
-        QtGui.QMainWindow.show(self)
+        QtWidgets.QMainWindow.show(self)
         self.listSplit.moveSplitter(120, 1)
         self.seriesSplit.moveSplitter(80, 1)
         self.viewMetaSplitter.moveSplitter(600, 1)
