@@ -29,7 +29,7 @@ from io import StringIO
 
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt, QStringListModel
-from . import resources_rc  # import resources manually since we have to do this to get the ui file
+from dicombrowser import resources_rc  # import resources manually since we have to do this to get the ui file
 
 import numpy as np
 import pyqtgraph as pg
@@ -86,7 +86,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.importZipButton.clicked.connect(self._openZipDialog)
         self.statusSignal.connect(self.setStatus)
         self.updateSignal.connect(self._updateSeriesTable)
-        self.filterLine.textChanged.connect(self._setFilterString)
+        self.filterLine.textChanged.connect(self._set_filter_string)
         self.imageSlider.valueChanged.connect(self.setSeriesImage)
         self.seriesView.clicked.connect(self._seriesTableClicked)
 
@@ -195,7 +195,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.seriesView.resizeColumnsToContents()
         self.seriesView.horizontalHeader().setStretchLastSection(True)
 
-    def _setFilterString(self, regex):
+    def _set_filter_string(self, regex):
         """Set the filtering regex to be `regex'."""
         self.filterRegex = regex
         self._fillTagView()
@@ -315,11 +315,13 @@ def main(args=[], qapp=None):
                 app.setStyleSheet(bytes(f.readAll()).decode("UTF-8"))
             else:
                 print("Failed to read %r" % f.fileName())
+    else:
+        app = None
 
     browser = DicomBrowser(args)
     browser.show()
 
-    return 0 if qapp is not None else app.exec_()
+    return 0 if app is None else app.exec_()
 
 
 def mainargv():
