@@ -176,8 +176,8 @@ class DicomSeries(object):
     Dicoms should be organized by series. This type will also cache loaded Dicom tags and images
     """
 
-    def __init__(self, seriesID, rootdir):
-        self.seriesID = seriesID  # ID of the series or ???
+    def __init__(self, series_id, rootdir):
+        self.series_id = series_id  # ID of the series or ???
         self.rootdir = rootdir # directory Dicoms were loaded from, files for this series may be in subdirectories
         self.filenames = [] # list of filenames for the Dicom associated with this series
         self.loadtags = [] # loaded abbreviated tag->(name,value) maps, 1 for each of self.filenames
@@ -242,7 +242,7 @@ class DicomSeries(object):
     def add_series(self, series):
         """Add every loaded dcm file from DicomSeries object `series` into this series."""
         for f, loadtag in zip(series.filenames, series.loadtags):
-            self.addFile(f, loadtag)
+            self.add_file(f, loadtag)
 
     def get_timestep_spec(self, tag="TriggerTime"):
         """Returns (start time, interval, num timesteps) triple."""
