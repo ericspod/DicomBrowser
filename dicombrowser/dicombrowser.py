@@ -154,13 +154,13 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         """Opens the open file dialog to choose a directory to scan for Dicoms."""
         rootdir = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Choose Source Directory", self.last_dir))
         if rootdir:
-            self.addSource(rootdir)
+            self.add_source(rootdir)
 
     def _open_zip_dialog(self):
         """Opens the open file dialog to choose a zip file to scan for Dicoms."""
-        zipfile = QtGui.QFileDialog.getOpenFileName(self, "Choose Zip File", self.last_dir, "Zip Files (*.zip)")
+        zipfile = QtWidgets.QFileDialog.getOpenFileName(self, "Choose Zip File", self.last_dir, "Zip Files (*.zip)")
         if zipfile[0]:
-            self.addSource(zipfile[0])
+            self.add_source(zipfile[0])
 
     def _update_series_table(self):
         """
