@@ -26,17 +26,17 @@ from PyQt5.QtCore import Qt
 from .dicom import KEYWORD_NAME_MAP
 
 
-def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
+def fill_tags(model, dcm, columns, regex=None, maxValueSize=256):
     """Fill the model with the tags from `dcm`."""
     try:
         regex = re.compile(str(regex), re.DOTALL)
     except:
         regex = ""  # no regex or bad pattern
 
-    def _datasetToItem(parent, d):
+    def _dataset_to_item(parent, d):
         """Add every element in `d' to the QStandardItem object `parent', this will be recursive for list elements."""
         for elem in d:
-            value = _elemToValue(elem)
+            value = _elem_to_value(elem)
             tag = "(%04x, %04x)" % (elem.tag.group, elem.tag.elem)
             parent1 = QtGui.QStandardItem(str(elem.name))
             tagitem = QtGui.QStandardItem(tag)
@@ -67,7 +67,7 @@ def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
                 for v in value:
                     parent1.appendRow(v)
 
-    def _elemToValue(elem):
+    def _elem_to_value(elem):
         """Return the value in `elem', which will be a string or a list of QStandardItem objects if elem.VR=='SQ'."""
         value = None
         if elem.VR == "SQ":
@@ -75,7 +75,7 @@ def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
 
             for i, item in enumerate(elem):
                 parent1 = QtGui.QStandardItem("%s %i" % (elem.name, i))
-                _datasetToItem(parent1, item)
+                _dataset_to_item(parent1, item)
 
                 if not regex or parent1.hasChildren():  # discard sequences whose children have been filtered out
                     value.append(parent1)
@@ -87,14 +87,14 @@ def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
 
     tparent = QtGui.QStandardItem("Tags") # create a parent node every tag is a child of, used for copying all tag data
     model.appendRow([tparent])
-    _datasetToItem(tparent, dcm)
+    _dataset_to_item(tparent, dcm)
 
 
 class SeriesTableModel(QtCore.QAbstractTableModel):
     """This manages the list of series with a sorting feature."""
 
     def __init__(self, series_columns, parent=None):
-        QtCore.QAbstractTableModel.__init__(self, parent)
+        super().__init__(parent)
         self.series_table = []
         self.series_columns = series_columns
         self.sortCol = 0
@@ -133,7 +133,7 @@ class SeriesTableModel(QtCore.QAbstractTableModel):
 class TagItemModel(QtGui.QStandardItemModel):
     """This manages a list of tags from a single Dicom file."""
 
-    def fillTags(self, dcm, columns, regex=None, maxValueSize=256):
+    def fill_tags(self, dcm, columns, regex=None, maxValueSize=256):
         self.clear()
         self.setHorizontalHeaderLabels(columns)
-        fillTags(self, dcm, columns, regex, maxValueSize) # actual code in a separate function to be usable elsewhere
+        fill_tags(self, dcm, columns, regex, maxValueSize) # actual code in a separate function to be usable elsewhere

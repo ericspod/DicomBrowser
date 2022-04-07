@@ -2,3 +2,4 @@ pyqtgraph
 pyqt5
 numpy
 pydicom
+pylibjpeg[all]

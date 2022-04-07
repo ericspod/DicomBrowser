@@ -19,7 +19,10 @@
 DicomBrowser - simple lightweight Dicom browsing application. 
 """
 
-import sys, os, threading, re
+import sys
+import os
+import threading
+import re
 from multiprocessing import freeze_support
 from contextlib import closing
 from collections import OrderedDict
@@ -115,7 +118,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
     def keyPressEvent(self, e):
         """Close the window if escape is pressed, otherwise do as inherited."""
-        if e.key() == Qt.Key_Escape:
+        if e.key() == QtCore.Qt.Key_Escape:
             self.close()
         else:
             QtWidgets.QMainWindow.keyPressEvent(self, e)
@@ -198,7 +201,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         """Refill the Dicom tag view, this will rejig the columns and (unfortunately) reset column sorting."""
         series = self.get_selected_series()
         vpos = self.tagView.verticalScrollBar().value()
-        self.tagModel.fillTags(series.get_tag_object(self.image_index), TAG_TREE_COLUMNS, self.filter_regex)
+        self.tagModel.fill_tags(series.get_tag_object(self.image_index), TAG_TREE_COLUMNS, self.filter_regex)
         self.tagView.expandAll()
         self.tagView.resizeColumnToContents(0)
         self.tagView.verticalScrollBar().setValue(vpos)
@@ -291,26 +294,22 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.last_dir = os.path.dirname(rootdir)
 
 
-def main(args=[], qapp=None):
+def main(args=[]):
     """
-    Default main program which starts Qt based on the command line arguments `args', sets the stylesheet if present,
-    then creates the window object and shows it. The `args' command line arguments list is passed to the window object
-    to pick up on specified directories. The `qapp' object would be the QApplication object if it's created elsewhere,
-    otherwise it's created here. Returns the value of QApplication.exec_() if this object was created here otherwise 0.
+    Default main program which starts Qt based on the command line arguments `args`, sets the stylesheet if present,
+    then creates the window object and shows it. The `args` command line arguments list is used to load given 
+    directories or zip files. Returns the value of QApplication.exec_() for the created QApplication object.
     """
-    if qapp is None:
-        app = QtWidgets.QApplication(args)
-        app.setAttribute(Qt.AA_DontUseNativeMenuBar)  # in OSX, forces menubar to be in window
-        app.setStyle("Plastique")
+    app = QtWidgets.QApplication(args)
+    app.setAttribute(Qt.AA_DontUseNativeMenuBar)  # in macOS, forces menubar to be in window
+    app.setStyle("Plastique")
 
-        # load the stylesheet included as a Qt resource
-        with closing(QtCore.QFile(":/css/DefaultUIStyle.css")) as f:
-            if f.open(QtCore.QFile.ReadOnly):
-                app.setStyleSheet(bytes(f.readAll()).decode("UTF-8"))
-            else:
-                print("Failed to read %r" % f.fileName())
-    else:
-        app = None
+    # load the stylesheet included as a Qt resource
+    with closing(QtCore.QFile(":/css/DefaultUIStyle.css")) as f:
+        if f.open(QtCore.QFile.ReadOnly):
+            app.setStyleSheet(bytes(f.readAll()).decode("UTF-8"))
+        else:
+            print("Failed to read %r" % f.fileName(), file=sys.stderr)
 
     browser = DicomBrowser()
 
@@ -321,14 +320,10 @@ def main(args=[], qapp=None):
 
     browser.show()
 
-    return 0 if app is None else app.exec_()
+    return app.exec()
 
 
 def mainargv():
     """setuptools compatible entry point."""
     freeze_support()
     sys.exit(main(sys.argv))
-
-
-if __name__ == "__main__":
-    mainargv()
