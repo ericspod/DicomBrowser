@@ -15,9 +15,7 @@
 #
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
-"""
-DicomBrowser - simple lightweight Dicom browsing application. 
-"""
+
 
 import re
 from operator import itemgetter
@@ -25,20 +23,20 @@ from operator import itemgetter
 from PyQt5 import QtGui, QtCore
 from PyQt5.QtCore import Qt
 
-from .dicom import keywordNameMap
+from .dicom import KEYWORD_NAME_MAP
 
 
-def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
+def fill_tags(model, dcm, columns, regex=None, maxValueSize=256):
     """Fill the model with the tags from `dcm`."""
     try:
         regex = re.compile(str(regex), re.DOTALL)
     except:
         regex = ""  # no regex or bad pattern
 
-    def _datasetToItem(parent, d):
+    def _dataset_to_item(parent, d):
         """Add every element in `d' to the QStandardItem object `parent', this will be recursive for list elements."""
         for elem in d:
-            value = _elemToValue(elem)
+            value = _elem_to_value(elem)
             tag = "(%04x, %04x)" % (elem.tag.group, elem.tag.elem)
             parent1 = QtGui.QStandardItem(str(elem.name))
             tagitem = QtGui.QStandardItem(tag)
@@ -69,7 +67,7 @@ def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
                 for v in value:
                     parent1.appendRow(v)
 
-    def _elemToValue(elem):
+    def _elem_to_value(elem):
         """Return the value in `elem', which will be a string or a list of QStandardItem objects if elem.VR=='SQ'."""
         value = None
         if elem.VR == "SQ":
@@ -77,7 +75,7 @@ def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
 
             for i, item in enumerate(elem):
                 parent1 = QtGui.QStandardItem("%s %i" % (elem.name, i))
-                _datasetToItem(parent1, item)
+                _dataset_to_item(parent1, item)
 
                 if not regex or parent1.hasChildren():  # discard sequences whose children have been filtered out
                     value.append(parent1)
@@ -89,53 +87,53 @@ def fillTags(model, dcm, columns, regex=None, maxValueSize=256):
 
     tparent = QtGui.QStandardItem("Tags") # create a parent node every tag is a child of, used for copying all tag data
     model.appendRow([tparent])
-    _datasetToItem(tparent, dcm)
+    _dataset_to_item(tparent, dcm)
 
 
 class SeriesTableModel(QtCore.QAbstractTableModel):
     """This manages the list of series with a sorting feature."""
 
-    def __init__(self, seriesColumns, parent=None):
-        QtCore.QAbstractTableModel.__init__(self, parent)
-        self.seriesTable = []
-        self.seriesColumns = seriesColumns
+    def __init__(self, series_columns, parent=None):
+        super().__init__(parent)
+        self.series_table = []
+        self.series_columns = series_columns
         self.sortCol = 0
         self.sortOrder = Qt.AscendingOrder
 
     def rowCount(self, parent):
-        return len(self.seriesTable)
+        return len(self.series_table)
 
     def columnCount(self, parent):
-        return len(self.seriesTable[0]) if self.seriesTable else 0
+        return len(self.series_table[0]) if self.series_table else 0
 
     def sort(self, column, order):
         self.layoutAboutToBeChanged.emit()
         self.sortCol = column
         self.sortOrder = order
 
-        self.seriesTable.sort(key=itemgetter(column), reverse=order == Qt.DescendingOrder)
+        self.series_table.sort(key=itemgetter(column), reverse=order == Qt.DescendingOrder)
         self.layoutChanged.emit()
 
-    def updateSeriesTable(self, seriesTable):
-        self.seriesTable = list(seriesTable)
+    def updateSeriesTable(self, series_table):
+        self.series_table = list(series_table)
         self.sort(self.sortCol, self.sortOrder)  # sort using existing parameters
 
     def getRow(self, i):
-        return self.seriesTable[i]
+        return self.series_table[i]
 
     def headerData(self, section, orientation, role):
         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return keywordNameMap[self.seriesColumns[section]]
+            return KEYWORD_NAME_MAP[self.series_columns[section]]
 
     def data(self, index, role):
         if index.isValid() and role == Qt.DisplayRole:
-            return str(self.seriesTable[index.row()][index.column()])
+            return str(self.series_table[index.row()][index.column()])
 
 
 class TagItemModel(QtGui.QStandardItemModel):
     """This manages a list of tags from a single Dicom file."""
 
-    def fillTags(self, dcm, columns, regex=None, maxValueSize=256):
+    def fill_tags(self, dcm, columns, regex=None, maxValueSize=256):
         self.clear()
         self.setHorizontalHeaderLabels(columns)
-        fillTags(self, dcm, columns, regex, maxValueSize) # actual code in a separate function to be usable elsewhere
+        fill_tags(self, dcm, columns, regex, maxValueSize) # actual code in a separate function to be usable elsewhere

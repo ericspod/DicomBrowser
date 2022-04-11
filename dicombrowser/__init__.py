@@ -16,20 +16,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-# from DicomBrowser import *
-
-__appname__ = "DicomBrowser"
-__version_info__ = (1, 3, 0)  # global application version, major/minor/patch
-__version__ = "%i.%i.%i" % __version_info__
-__author__ = "Eric Kerfoot"
-__copyright__ = "Copyright (c) 2016-9 Eric Kerfoot, King's College London, all rights reserved. Licensed under the GPL (see LICENSE.txt)."
 
 
-import os, sys
-
-scriptdir = os.path.dirname(os.path.abspath(__file__))  # path of the current file
-
-# this allows the script to be run directly from the repository without having to install pydicom or pyqtgraph
-if os.path.isdir(scriptdir + "/../pydicom"):
-    sys.path.append(scriptdir + "/../pydicom")
-    sys.path.append(scriptdir + "/../pyqtgraph")
+from ._version import __version__, __author__, __copyright__
+from .dicombrowser import mainargv

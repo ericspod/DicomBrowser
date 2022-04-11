@@ -1,0 +1,29 @@
+
+[build-system]
+requires = ["setuptools>=61", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dicombrowser"
+description = "Lightweight portable DICOM viewer with interface for images and tags"
+license = {text = "GPLv3, see LICENSE.txt"}
+dependencies = ["numpy", "pyqt5", "pyqtgraph", "pydicom", "pylibjpeg[all]"]
+requires-python = ">=3.7"
+authors = [{ name = "Eric Kerfoot", email = "eric.kerfoot@kcl.ac.uk" }]
+dynamic = ["version", "readme"]
+
+[project.urls]
+homepage = "http://github.com/ericspod/DicomBrowser"
+
+[project.scripts]
+dicombrowser = "dicombrowser:mainargv"
+
+[tool.setuptools.packages.find]
+include = ["dicombrowser*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "dicombrowser._version.__version__"}
+readme = {file = ["README.md"], content-type = "text/markdown"}
+
+[metadata]
+description-file = "README.md"

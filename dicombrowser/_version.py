@@ -1,5 +1,3 @@
-#! python
-
 # DicomBrowser
 # Copyright (C) 2016-9 Eric Kerfoot, King's College London, all rights reserved
 #
@@ -18,10 +16,10 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-try:
-    from DicomBrowser.dicombrowser import mainargv  # for use as pyinstaller script
-except:
-    from .dicombrowser import mainargv  # for running a module directly
+__appname__ = "DicomBrowser"
+__version_info__ = (1, 4, 0)  # global application version, major/minor/patch
+__version__ = "%i.%i.%i" % __version_info__
+__author__ = "Eric Kerfoot"
+__author_email__="eric.kerfoot@kcl.ac.uk"
+__copyright__ = "Copyright (c) 2016-22 Eric Kerfoot, King's College London, all rights reserved. Licensed under the GPL (see LICENSE.txt)."
 
-if __name__ == "__main__":
-    mainargv()
