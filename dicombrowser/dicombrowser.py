@@ -30,12 +30,12 @@ from collections import OrderedDict
 from queue import Queue, Empty
 from io import StringIO
 
+import numpy as np
+import pyqtgraph as pg
+
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt, QStringListModel
 from dicombrowser import resources_rc  # import resources manually since we have to do this to get the ui file
-
-import numpy as np
-import pyqtgraph as pg
 
 from ._version import __version__
 

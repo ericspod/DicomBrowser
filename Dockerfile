@@ -5,15 +5,17 @@
 #
 # You may have to run "xhost +local:docker" beforehand to allow local connections. 
 
-FROM alpine:latest
+#FROM alpine:3.14
+FROM continuumio/miniconda3:4.10.3p0-alpine
 
-RUN apk update
-RUN apk add py3-qt5 py3-numpy py3-pip ttf-freefont mesa-dri-gallium
+#RUN apk update && apk add py3-qt5 py3-pip ttf-freefont mesa-dri-gallium
 
-RUN pip3 install pydicom pyqtgraph
+RUN apk update && apk add ttf-freefont mesa mesa-dri-gallium glib freeglut
 
 WORKDIR /dicombrowser
 
 COPY . /dicombrowser
 
-CMD ["python3","-m","dicombrowser"]
+RUN pip install .
+
+CMD ["dicombrowser"]
