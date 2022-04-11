@@ -1,7 +1,7 @@
 #! python
 
 # DicomBrowser
-# Copyright (C) 2016-9 Eric Kerfoot, King's College London, all rights reserved
+# Copyright (C) 2016-22 Eric Kerfoot, King's College London, all rights reserved
 #
 # This file is part of DicomBrowser.
 #

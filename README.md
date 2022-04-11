@@ -6,46 +6,36 @@ This is intended to be a cross-platform utility suitable for previewing Dicom da
 
 ## Installation
 
-DicomBrowser requires **Python 3.7+**, **PyQt5**, **numpy**, **pydicom** and **pyqtgraph**, the latter two are submodules of this project.
-Ensure these packages are installed, in the case of **pydicom** and **pyqtgraph** ensure the submodules are included in your clone:
+DicomBrowser requires **Python 3.7+**, **PyQt5**, **numpy**, **pydicom** and **pyqtgraph**, and optionally the libraries for pydicom used to load JPEG data.
 
-    git clone --recursive https://github.com/ericspod/DicomBrowser.git
+Installation through **pip**:
 
-DicomBrowser can be installed using the **setup.py** script (although this isn't necessary, see below):
+    pip install dicombrowser
 
-    python setup.py install
+Installation from repo:
 
-This will generate the necessary files for the UI, install the module, and create a script to run the application from the command line called *DicomBrowser*, but will not install other needed packages. 
-Ensure the pydicom and pyqtgraph submodules have been checked out and then run the above command in each to install them.
+    git clone https://github.com/ericspod/DicomBrowser.git
+    cd DicomBrowser
+    pip install .
 
-PyQt5 must be acquired through your package manager or through its website. Numpy can be installed through your package manager, the website, or **pip**:
+This will create the entry point **dicombrowser** which accepts DICOM directories or zip files containing them:
 
-    pip install numpy
+    dicombrowser MAGIX.zip
+    
+DicomBrowser can be run directly as a module from the repo:
 
-Generating the packaged executables requires **pyinstaller**, clone and install from https://github.com/pyinstaller/pyinstaller if you want to generate these yourself.
-
-## Running
-
-DicomBrowser can be run directly as a module from the project's directory:
-
-    python -m DicomBrowser
-
-The releases also include pre-built Windows and OSX standalone applications, allowing you to download these and run the
-application without installing Python or the necessary packages.
-
-Directories provided as command line arguments will be imported, any other arguments or files will be ignored.
-
+    python -m dicombrowser
 
 ## Docker
 
 A Dockerfile is included, to build the image with the following command:
-```
-docker build . --tag dicombrowser:latest
-```
+
+    docker build . -t dicombrowser:latest
+
 and then to run the created image "dicombrowser" on a X Windows host use a command like the following:
-```
-docker run -ti --rm --net=host --env="DISPLAY" --volume="$HOME/.Xauthority:/root/.Xauthority:rw" dicombrowser
-```
+
+    docker run -ti --rm --net=host -e DISPLAY -v "$HOME/.Xauthority:/root/.Xauthority:rw" dicombrowser
+
 
 Running `xhost +local:docker` may be necessary to add permissions and allow the container to access the X network ports.
 
@@ -55,7 +45,7 @@ DicomBrowser is developed and maintained by Eric Kerfoot <eric.kerfoot@kcl.ac.uk
 
 ## License
 
-Copyright (C) 2016-9 Eric Kerfoot, King's College London, all rights reserved
+Copyright (C) 2016-22 Eric Kerfoot, King's College London, all rights reserved
 
 This file is part of DicomBrowser.
 

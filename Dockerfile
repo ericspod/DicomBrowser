@@ -7,7 +7,7 @@
 
 FROM alpine:3.14
 
-RUN apk update && apk add py3-qt5 py3-numpy py3-pip openjpeg-tools py3-pillow ttf-freefont mesa-dri-gallium
+RUN apk update && apk add py3-qt5 py3-numpy py3-pip py3-pillow ttf-freefont mesa-dri-gallium
 
 RUN pip3 install pydicom pyqtgraph
 
