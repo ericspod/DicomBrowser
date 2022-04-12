@@ -4,6 +4,8 @@ This is a lightweight portable Dicom browser application written in Python.
 It allows Dicom directories to be loaded, images and tag data viewed, and not much else aside.
 This is intended to be a cross-platform utility suitable for previewing Dicom data rather than doing any sort of processing.
 
+![DicomBrowser Screenshot](https://github.com/ericspod/DicomBrowser/raw/master/res/screenshot.png "DicomBrowser Screenshot")
+
 ## Installation
 
 DicomBrowser requires **Python 3.7+**, **PyQt5**, **numpy**, **pydicom** and **pyqtgraph**, and optionally the libraries for pydicom used to load JPEG data.
