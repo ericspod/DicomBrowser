@@ -90,8 +90,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.updateSignal.connect(self._update_series_table)
         self.filterLine.textChanged.connect(self._set_filter_string)
         self.imageSlider.valueChanged.connect(self.set_series_image)
-        self.seriesView.clicked.connect(self._series_table_clicked)
-
+        
         # setup the list and table models
         self.src_model = QStringListModel()
         self.series_model = SeriesTableModel(self.series_columns)
@@ -102,6 +101,10 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.sourceListView.setModel(self.src_model)
         self.seriesView.setModel(self.series_model)
         self.tagView.setModel(self.tagModel)
+
+        # set the selection model and the callback when the selected series changes, must happen after model is set
+        self.seriesView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
+        self.seriesView.selectionModel().currentChanged.connect(self._series_table_current_changed)
 
         # create the pyqtgraph object for viewing images
         self.image_view = pg.ImageView()
@@ -115,7 +118,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
         # override CTRL+C in the tag tree to copy a fuller set of tag data to the clipboard
         QtWidgets.QShortcut(QtGui.QKeySequence("Ctrl+c"), self.tagView).activated.connect(self._set_clipboard)
-
+        
     def keyPressEvent(self, e):
         """Close the window if escape is pressed, otherwise do as inherited."""
         if e.key() == QtCore.Qt.Key_Escape:
@@ -133,8 +136,8 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
     def _load_source_thread(self):
         """
         This is run in a daemon thread and continually checks self.srcQueue for a queued directory or zip file to scan
-        for Dicom files. It calls loadDicomDir() for a given directory or loadDicomZip() for a zip file and adds the
-        results the self.srclist member.
+        for Dicom files. It calls load_dicom_dir() for a given directory or load_dicom_zip() for a zip file and adds 
+        the results to the self.src_list member.
         """
         while True:
             try:
@@ -181,10 +184,11 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.series_model.updateSeriesTable(self.series_map.keys())
         self.series_model.layoutChanged.emit()
 
-    def _series_table_clicked(self, item):
-        """Called when a series is clicked on, set the viewed image to be from the clicked series."""
-        self.selected_row = item.row()
-        self.set_series_image(self.imageSlider.value(), True)
+    def _series_table_current_changed(self, current, prev):
+        """Called when the selection in the series table changes, set the viewed image to be the selected series."""
+        if current.row() != prev.row():
+            self.selected_row = current.row()
+            self.set_series_image(self.imageSlider.value(), True)
 
     def _series_table_resize(self):
         """Resizes self.seriesView columns to contents, setting the last section to stretch."""
@@ -298,7 +302,7 @@ def main(args=[]):
     """
     Default main program which starts Qt based on the command line arguments `args`, sets the stylesheet if present,
     then creates the window object and shows it. The `args` command line arguments list is used to load given 
-    directories or zip files. Returns the value of QApplication.exec_() for the created QApplication object.
+    directories or zip files. Returns the value of QApplication.exec() for the created QApplication object.
     """
     app = QtWidgets.QApplication(args)
     app.setAttribute(Qt.AA_DontUseNativeMenuBar)  # in macOS, forces menubar to be in window

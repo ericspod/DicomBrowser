@@ -7,9 +7,10 @@
 
 FROM alpine:3.14
 
-RUN apk update && apk add py3-qt5 py3-numpy py3-pip py3-pillow ttf-freefont mesa-dri-gallium
-
-RUN pip3 install pydicom pyqtgraph
+RUN apk update && \
+    apk add py3-qt5 py3-numpy py3-pip py3-pillow ttf-freefont mesa-dri-gallium && \
+    pip3 install pydicom pyqtgraph && \
+    rm -rf /var/cache/apk/*
 
 WORKDIR /dicombrowser
 
