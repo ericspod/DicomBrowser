@@ -95,10 +95,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.filterLine.textChanged.connect(self._set_filter_string)
         self.imageSlider.valueChanged.connect(self.set_series_image)
 
-        # setup the list and table models
-        # self.src_model = QStringListModel()
-        # self.series_model = SeriesTableModel(self.series_columns)
-        # self.series_model.layoutChanged.connect(self._series_table_resize)
+        # setup the attribute and series models
         self.attr_model = AttrItemModel()
         self.series_model = SeriesTreeModel(self.series_columns)
         self.series_model.layoutChanged.connect(self._series_view_resize)
@@ -299,7 +296,7 @@ def main(args=[]):
         if f.open(QtCore.QFile.ReadOnly):
             app.setStyleSheet(bytes(f.readAll()).decode("UTF-8"))
         else:
-            print("Failed to read %r" % f.fileName(), file=sys.stderr)
+            print(f"Failed to read {f.fileName()}", file=sys.stderr)
 
     browser = DicomBrowser()
 
