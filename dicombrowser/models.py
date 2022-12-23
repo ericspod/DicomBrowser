@@ -90,46 +90,6 @@ def fill_attrs(model, dcm, columns, regex=None, maxValueSize=256):
     _dataset_to_item(tparent, dcm)
 
 
-# class SeriesTableModel(QtCore.QAbstractTableModel):
-#     """This manages the list of series with a sorting feature."""
-
-#     def __init__(self, series_columns, parent=None):
-#         super().__init__(parent)
-#         self.series_table = []
-#         self.series_columns = series_columns
-#         self.sortCol = 0
-#         self.sortOrder = Qt.AscendingOrder
-
-#     def rowCount(self, parent):
-#         return len(self.series_table)
-
-#     def columnCount(self, parent):
-#         return len(self.series_table[0]) if self.series_table else 0
-
-#     def sort(self, column, order):
-#         self.layoutAboutToBeChanged.emit()
-#         self.sortCol = column
-#         self.sortOrder = order
-
-#         self.series_table.sort(key=itemgetter(column), reverse=order == Qt.DescendingOrder)
-#         self.layoutChanged.emit()
-
-#     def updateSeriesTable(self, series_table):
-#         self.series_table = list(series_table)
-#         self.sort(self.sortCol, self.sortOrder)  # sort using existing parameters
-
-#     def getRow(self, i):
-#         return self.series_table[i]
-
-#     def headerData(self, section, orientation, role):
-#         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-#             return KEYWORD_NAME_MAP[self.series_columns[section]]
-
-#     def data(self, index, role):
-#         if index.isValid() and role == Qt.DisplayRole:
-#             return str(self.series_table[index.row()][index.column()])
-
-
 class AttrItemModel(QtGui.QStandardItemModel):
     """This manages a list of attributes from a single Dicom file."""
 

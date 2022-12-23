@@ -18,12 +18,12 @@
 
 import os
 import zipfile
-from multiprocessing import Pool, Manager, Queue
-from pydicom import dicomio, datadict, errors
-from queue import Empty
+from concurrent.futures import ProcessPoolExecutor, as_completed
 from io import BytesIO
+from glob import glob
 
 import numpy as np
+from pydicom import dicomio, datadict, errors
 
 
 # attribute names of default columns in the series list, this can be changed to pull out different attribute names for columns
@@ -37,7 +37,7 @@ SERIES_LIST_COLUMNS = (
 )
 
 # names of columns in attribute tree, this shouldn't ever change
-ATTR_TREE_COLUMNS = ("Name", "Attribute", "Value")
+ATTR_TREE_COLUMNS = ("Name", "Tag", "Value")
 
 # list of attributes to initially load when a directory/file is scanned, loading only these speeds up scanning immensely
 LOAD_ATTRS = (
@@ -65,57 +65,60 @@ KEYWORD_NAME_MAP.update(EXTRA_KEYWORDS)
 FULL_NAME_MAP = {v: k for k, v in KEYWORD_NAME_MAP.items()}  # maps full names to keywords
 
 
-def load_dicom_file(filename, queue):
-    """Load the Dicom file `filename` and put an abbreviated attr->value map onto `queue`."""
+def get_scaled_image(dcm):
+    """Return image data from `dcm` scaled using slope and intercept values."""
+    try:
+        rslope = float(dcm.get("RescaleSlope", 1) or 1)
+        rinter = float(dcm.get("RescaleIntercept", 0) or 0)
+        img = dcm.pixel_array * rslope + rinter
+        return img
+    except KeyError:
+        return None
+
+
+def load_dicom_file(filename):
+    """Load the Dicom file `filename`, returns the filename and an abbreviated attribute dictionary."""
     try:
         dcm = dicomio.read_file(filename, stop_before_pixels=True)
         attrs = {t: dcm.get(t) for t in LOAD_ATTRS if t in dcm}
-        queue.put((filename, attrs))
+        return filename, attrs
     except errors.InvalidDicomError:
         pass
 
 
 def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
     """
-    Load all the Dicom files from `rootdir' using `numprocs' number of processes. This will attempt to load each file
-    found in `rootdir' and store from each file the attributes defined in LOAD_ATTRS. The filenames and the loaded
+    Load all the Dicom files from `rootdir` using `numprocs` number of processes. This will attempt to load each file
+    found in `rootdir` and store from each file the attributes defined in LOAD_ATTRS. The filenames and the loaded
     attributes for Dicom files are stored in a DicomSeries object representing the acquisition series each file belongs
-    to. The `statusfunc' callback is used to indicate loading status, taking as arguments a status string, count of
+    to. The `statusfunc` callback is used to indicate loading status, taking as arguments a status string, count of
     loaded objects, and the total number to load. A status string of '' indicates loading is done. The default value
     causes no status indication to be made. Return value is a sequence of DicomSeries objects in no particular order.
     """
-    allfiles = []
-    for root, _, files in os.walk(rootdir):
-        allfiles += [os.path.join(root, f) for f in files if f.lower() != "dicomdir"]
+    allfiles = list(filter(os.path.isfile, glob(rootdir + "/**/*", recursive=True)))
 
     numfiles = len(allfiles)
     series = {}
     count = 0
 
-    if not numfiles:
+    if numfiles == 0:
         return []
 
-    with Manager() as m:
-        queue = m.Queue()
-        with Pool(processes=numprocs) as pool:
-            res = pool.starmap_async(load_dicom_file, [(f, queue) for f in allfiles])
+    with ProcessPoolExecutor(max_workers=numprocs) as p:
+        futures = [p.submit(load_dicom_file, f) for f in allfiles]
 
-            # loop so long as any process is busy or there are files on the queue to process
-            while not res.ready() or not queue.empty():
-                try:
-                    filename, dcm = queue.get(False)
-                    seriesid = dcm.get("SeriesInstanceUID", "???")
-                    if seriesid not in series:
-                        series[seriesid] = DicomSeries(seriesid, rootdir)
+        for count, future in enumerate(as_completed(futures)):
+            result = future.result()
+            if result is not None:
+                filename, dcm = result
+                seriesid = dcm.get("SeriesInstanceUID", "???")
+                if seriesid not in series:
+                    series[seriesid] = DicomSeries(seriesid, rootdir)
 
-                    series[seriesid].add_file(filename, dcm)
-                except Empty:  # from queue.get(), keep trying so long as the loop condition is true
-                    pass
+                series[seriesid].add_file(filename, dcm)
 
-                count += 1
-                # update status only 100 times, doing it too frequently really slows things down
-                if numfiles < 100 or count % (numfiles // 100) == 0:
-                    statusfunc("Loading DICOM files", count, numfiles)
+            if numfiles < 100 or count % (numfiles // 100) == 0:
+                statusfunc("Loading DICOM files", count, numfiles)
 
     statusfunc("", 0, 0)
     return list(series.values())
@@ -135,7 +138,7 @@ def load_dicom_zip(filename, statusfunc=lambda s, c, n: None):
         numfiles = len(names)
 
         for n in names:
-            nfilename = "%s?%s" % (filename, n)
+            nfilename = f"{filename}?{n}"
             s = BytesIO(z.read(n))
 
             try:
@@ -149,17 +152,10 @@ def load_dicom_zip(filename, statusfunc=lambda s, c, n: None):
                     series[seriesid] = DicomSeries(seriesid, nfilename)
 
                 # need to load image data now since we don't want to reload the zip file later when an image is viewed
-                try:  # attempt to create the image matrix, store None if this doesn't work
-                    rslope = float(dcm.get("RescaleSlope", 1) or 1)
-                    rinter = float(dcm.get("RescaleIntercept", 0) or 0)
-                    img = dcm.pixel_array * rslope + rinter
-                except:
-                    img = None
+                img = get_scaled_image(dcm)  # attempt to create the image array, store None if this doesn't work
 
                 s = series[seriesid]
-                s.add_file(nfilename, dcm)
-                s.attrcache[len(s.filenames) - 1] = dcm
-                s.imgcache[len(s.filenames) - 1] = img
+                s.add_file(nfilename, dcm, dcm, img)
 
             count += 1
             # update status only 100 times, doing it too frequently really slows things down
@@ -184,16 +180,23 @@ class DicomSeries(object):
         self.filenames = []  # list of filenames for the Dicom associated with this series
         self.loadattrs = []  # loaded abbreviated attr->(name,value) maps, 1 for each of self.filenames
         self.imgcache = {}  # image data cache, mapping index in self.filenames to arrays or None for non-images files
-        self.attrcache = (
-            {}
-        )  # attr values cache, mapping index in self.filenames to OrderedDict of attr->(name,value) maps
+        self.attrcache = {}  # attribute cache, mapping index in self.filenames to dict of attr->(name,value) mappings
 
-    def add_file(self, filename, loadattr):
-        """Add a filename and abbreviated attr map to the series."""
+    def add_file(self, filename, loadattr, attrs=None, img=None):
+        """
+        Add a filename and abbreviated attribute map `loadattr` to the series. Further attributes and image data given
+        in `attrs` and `img` will be be cached if provided.
+        """
         self.filenames.append(filename)
         self.loadattrs.append(loadattr)
 
+        if attrs is not None or img is not None:
+            idx = len(self.filenames) - 1
+            self.attrcache[idx] = attrs
+            self.imgcache[idx] = img
+
     def sort_filenames(self):
+        """Concurrently sort filenames and associated attributes lists."""
         self.filenames, self.loadattrs = zip(*sorted(zip(self.filenames, self.loadattrs)))
 
     def get_attr_object(self, index):
@@ -209,7 +212,7 @@ class DicomSeries(object):
         start, interval, numtimes = self.get_timestep_spec()
         extravals = {
             "NumImages": len(self.filenames),
-            "TimestepSpec": "start: %i, interval: %i, # Steps: %i" % (start, interval, numtimes),
+            "TimestepSpec": f"start: {start}, interval: {interval}, # Steps: {numtimes}",
             "StartTime": start,
             "NumTimesteps": numtimes,
             "TimeInterval": interval,
@@ -218,7 +221,7 @@ class DicomSeries(object):
         return extravals
 
     def get_attr_values(self, names, index=0):
-        """Get the attr values for attr names listed in `names' for image at the given index."""
+        """Get the attr values for attr names listed in `names` for image at the given index."""
         if not self.filenames:
             return ()
 
@@ -233,14 +236,8 @@ class DicomSeries(object):
     def get_pixel_data(self, index):
         """Get the pixel data array for file at position `index` in self.filenames, or None if no pixel data."""
         if index not in self.imgcache:
-            try:
-                dcm = dicomio.read_file(self.filenames[index])
-                rslope = float(dcm.get("RescaleSlope", 1) or 1)
-                rinter = float(dcm.get("RescaleIntercept", 0) or 0)
-                img = dcm.pixel_array * rslope + rinter
-            except:
-                img = None  # exceptions indicate that the pixel data doesn't exist or isn't readable so ignore
-
+            dcm = dicomio.read_file(self.filenames[index])
+            img = get_scaled_image(dcm)
             self.imgcache[index] = img
 
         return self.imgcache[index]

@@ -100,18 +100,12 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         # self.series_model = SeriesTableModel(self.series_columns)
         # self.series_model.layoutChanged.connect(self._series_table_resize)
         self.attr_model = AttrItemModel()
-
-        self.seriesModel = SeriesTreeModel(self.series_columns)
-        self.seriesModel.layoutChanged.connect(self._series_view_resize)
+        self.series_model = SeriesTreeModel(self.series_columns)
+        self.series_model.layoutChanged.connect(self._series_view_resize)
 
         # assign models to views
-        # self.sourceListView.setModel(self.src_model)
-        # self.seriesView.setModel(self.series_model)
         self.attrView.setModel(self.attr_model)
-
-        self.seriesView.setModel(self.seriesModel)
-
-        # self.seriesView.selectionModel().currentChanged.connect(self._srcseries_table_current_changed)
+        self.seriesView.setModel(self.series_model)
 
         # set the selection model and the callback when the selected series changes, must happen after model is set
         self.seriesView.setSelectionBehavior(QtWidgets.QAbstractItemView.SelectRows)
@@ -140,14 +134,8 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
     def show(self):
         """Calls the inherited show() method then sets the splitter positions."""
         QtWidgets.QMainWindow.show(self)
-        # self.listSplit.moveSplitter(120, 1)
         self.seriesSplit.moveSplitter(200, 1)
         self.viewMetaSplitter.moveSplitter(600, 1)
-
-    # def remove_source(self, index):
-    #     """Remove the source directory at the given index."""
-    #     self.src_list.pop(index)
-    #     self.updateSignal.emit()
 
     def add_source(self, rootdir):
         """Add the given directory to the queue of directories to load and set the self.lastDir value to its parent."""
@@ -168,8 +156,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
                 if series and all(len(s.filenames) > 0 for s in series):
                     for s in series:
-                        # sort series contents by filename
-                        s.sort_filenames()
+                        s.sort_filenames() # sort series contents by filename
 
                     self.src_dict[src] = series
 
@@ -190,56 +177,23 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
             self.add_source(zipfile[0])
 
     def _update_series_view(self, srcname):
-        # """
-        # Updates the self.seriesMap object from self.srclist, and refills the self.srcmodel object. This will refresh
-        # the list of source directories and the table of available series.
-        # """
-        # self.series_map.clear()
-
-        # for _, series in self.src_list:  # add each series in each source into self.seriesMap
-        #     for s in series:
-        #         entry = s.get_tag_values(self.series_columns)
-        #         self.series_map[entry] = s
-
-        # self.src_model.setStringList([s[0] for s in self.src_list])
-        # self.series_model.updateSeriesTable(self.series_map.keys())
-        # self.series_model.layoutChanged.emit()
-
-        # # for src, series in self.src_dict.items():
-        #     # self.srcseriesModel.data[src]=[s.get_tag_values(self.series_columns) for s in series]
-
-        # # self.srcseriesModel.update()
-        # src=self.new_src
-        # series=self.src_dict[src]
-        # self.srcseriesModel.add_source(src,series,[s.get_tag_values(self.series_columns) for s in series])
-        # self.srcseriesView.expandAll()
-        # # self.srcseriesView.layoutChanged.emit()
 
         series = self.src_dict[srcname]
 
         columns = [s.get_attr_values(self.series_columns) for s in series]
-        self.seriesModel.add_source(srcname, series, columns)
+        self.series_model.add_source(srcname, series, columns)
         self.seriesView.expandAll()
-        self.seriesModel.layoutChanged.emit()
+        self.series_model.layoutChanged.emit()
 
     def _series_view_current_changed(self, current, prev):
         if current.row() != prev.row():
-            item: QtGui.QStandardItem = self.seriesModel.itemFromIndex(current)
+            item: QtGui.QStandardItem = self.series_model.itemFromIndex(current)
             if item is not None:
                 self.selected_series = item.data()
                 self.set_series_image(self.imageSlider.value(), True)
 
-    # def _series_table_current_changed(self, current, prev):
-    #     """Called when the selection in the series table changes, set the viewed image to be the selected series."""
-    #     if current.row() != prev.row():
-    #         self.selected_row = current.row()
-    #         self.set_series_image(self.imageSlider.value(), True)
-
     def _series_view_resize(self):
         """Resizes self.seriesView columns to contents, setting the last section to stretch."""
-        # self.seriesView.horizontalHeader().setStretchLastSection(False)
-        # self.seriesView.resizeColumnsToContents()
-        # self.seriesView.horizontalHeader().setStretchLastSection(True)
         self.seriesView.resizeColumnToContents(0)
 
     def _set_filter_string(self, regex):
@@ -280,11 +234,6 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
             print_children(items[0], 1, clipout)
 
         QtWidgets.QApplication.clipboard().setText(clipout.getvalue())
-
-    # def get_selected_series(self):
-    #     """Returns the DicomSeries object for the selected series, None if no series is selected."""
-    #     if 0 <= self.selected_row < len(self.series_map):
-    #         return self.series_map[self.series_model.getRow(self.selected_row)]
 
     def set_series_image(self, i, auto_range=False):
         """
