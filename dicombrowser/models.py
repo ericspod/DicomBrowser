@@ -26,8 +26,8 @@ from PyQt5.QtCore import Qt
 from .dicom import KEYWORD_NAME_MAP
 
 
-def fill_tags(model, dcm, columns, regex=None, maxValueSize=256):
-    """Fill the model with the tags from `dcm`."""
+def fill_attrs(model, dcm, columns, regex=None, maxValueSize=256):
+    """Fill the model with the attrs from `dcm`."""
     try:
         regex = re.compile(str(regex), re.DOTALL)
     except:
@@ -85,55 +85,79 @@ def fill_tags(model, dcm, columns, regex=None, maxValueSize=256):
 
         return value
 
-    tparent = QtGui.QStandardItem("Tags") # create a parent node every tag is a child of, used for copying all tag data
+    tparent = QtGui.QStandardItem("Attributes")  # create a parent node for all attributes, used for copying data
     model.appendRow([tparent])
     _dataset_to_item(tparent, dcm)
 
 
-class SeriesTableModel(QtCore.QAbstractTableModel):
-    """This manages the list of series with a sorting feature."""
+# class SeriesTableModel(QtCore.QAbstractTableModel):
+#     """This manages the list of series with a sorting feature."""
 
-    def __init__(self, series_columns, parent=None):
-        super().__init__(parent)
-        self.series_table = []
-        self.series_columns = series_columns
-        self.sortCol = 0
-        self.sortOrder = Qt.AscendingOrder
+#     def __init__(self, series_columns, parent=None):
+#         super().__init__(parent)
+#         self.series_table = []
+#         self.series_columns = series_columns
+#         self.sortCol = 0
+#         self.sortOrder = Qt.AscendingOrder
 
-    def rowCount(self, parent):
-        return len(self.series_table)
+#     def rowCount(self, parent):
+#         return len(self.series_table)
 
-    def columnCount(self, parent):
-        return len(self.series_table[0]) if self.series_table else 0
+#     def columnCount(self, parent):
+#         return len(self.series_table[0]) if self.series_table else 0
 
-    def sort(self, column, order):
-        self.layoutAboutToBeChanged.emit()
-        self.sortCol = column
-        self.sortOrder = order
+#     def sort(self, column, order):
+#         self.layoutAboutToBeChanged.emit()
+#         self.sortCol = column
+#         self.sortOrder = order
 
-        self.series_table.sort(key=itemgetter(column), reverse=order == Qt.DescendingOrder)
-        self.layoutChanged.emit()
+#         self.series_table.sort(key=itemgetter(column), reverse=order == Qt.DescendingOrder)
+#         self.layoutChanged.emit()
 
-    def updateSeriesTable(self, series_table):
-        self.series_table = list(series_table)
-        self.sort(self.sortCol, self.sortOrder)  # sort using existing parameters
+#     def updateSeriesTable(self, series_table):
+#         self.series_table = list(series_table)
+#         self.sort(self.sortCol, self.sortOrder)  # sort using existing parameters
 
-    def getRow(self, i):
-        return self.series_table[i]
+#     def getRow(self, i):
+#         return self.series_table[i]
 
-    def headerData(self, section, orientation, role):
-        if role == Qt.DisplayRole and orientation == Qt.Horizontal:
-            return KEYWORD_NAME_MAP[self.series_columns[section]]
+#     def headerData(self, section, orientation, role):
+#         if role == Qt.DisplayRole and orientation == Qt.Horizontal:
+#             return KEYWORD_NAME_MAP[self.series_columns[section]]
 
-    def data(self, index, role):
-        if index.isValid() and role == Qt.DisplayRole:
-            return str(self.series_table[index.row()][index.column()])
+#     def data(self, index, role):
+#         if index.isValid() and role == Qt.DisplayRole:
+#             return str(self.series_table[index.row()][index.column()])
 
 
-class TagItemModel(QtGui.QStandardItemModel):
-    """This manages a list of tags from a single Dicom file."""
+class AttrItemModel(QtGui.QStandardItemModel):
+    """This manages a list of attributes from a single Dicom file."""
 
-    def fill_tags(self, dcm, columns, regex=None, maxValueSize=256):
+    def fill_attrs(self, dcm, columns, regex=None, maxValueSize=256):
         self.clear()
         self.setHorizontalHeaderLabels(columns)
-        fill_tags(self, dcm, columns, regex, maxValueSize) # actual code in a separate function to be usable elsewhere
+        fill_attrs(self, dcm, columns, regex, maxValueSize)  # actual code in a separate function to be usable elsewhere
+
+
+class SeriesTreeModel(QtGui.QStandardItemModel):
+    def __init__(self, columns, data={}, parent=None):
+        super().__init__(parent)
+        self.columns = columns
+        self.data = dict(data)
+
+        self.setHorizontalHeaderLabels([KEYWORD_NAME_MAP[s] for s in self.columns])
+
+    def add_source(self, srcname, dataobjs, values):
+        parent = QtGui.QStandardItem(srcname)
+
+        for dataobj, row in zip(dataobjs, values):
+            rowitems = []
+
+            for v in row:
+                item = QtGui.QStandardItem(v)
+                item.setData(dataobj)
+                rowitems.append(item)
+
+            parent.appendRow(rowitems)
+
+        self.appendRow(parent)
