@@ -25,7 +25,7 @@ import threading
 import re
 from multiprocessing import freeze_support
 from contextlib import closing
-from collections import OrderedDict
+import importlib.resources as pkg_resources
 
 from queue import Queue, Empty
 from io import StringIO
@@ -34,22 +34,21 @@ import numpy as np
 import pyqtgraph as pg
 
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
-from PyQt5.QtCore import Qt, QStringListModel
-from dicombrowser import resources_rc  # import resources manually since we have to do this to get the ui file
+from PyQt5.QtCore import Qt
 
 from ._version import __version__
-
+from . import res
 from .dicom import load_dicom_dir, load_dicom_zip, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
 from .models import AttrItemModel, SeriesTreeModel
 
 
-# Load the ui file from the resource, removing the "resources" tag so that uic doesn't try (and fail) to load resources.
-# This allows loading the UI at runtime rather than generating a .py file with pyuic not cross-compatible with PyQt4/5.
-with closing(QtCore.QFile(":/layout/DicomBrowserWin.ui")) as uiFile:
-    if uiFile.open(QtCore.QFile.ReadOnly):
-        ui = bytes(uiFile.readAll()).decode("utf-8")
-        ui = re.sub("<resources>.*</resources>", "", ui, flags=re.DOTALL)  # get rid of the resources section in the XML
-        Ui_DicomBrowserWin, _ = uic.loadUiType(StringIO(ui))  # create a local type definition
+# Load the ui file from the res module and remove the "resources" tag so that uic doesn't try (and fail) to load 
+# resources. The paths for icons is also changed from what is expected in Designer to what is used with the 
+# search path set in main().
+ui=pkg_resources.read_text(res,"DicomBrowserWin.ui")
+ui = re.sub("<resources>.*</resources>", "", ui, flags=re.DOTALL)  # get rid of the resources section in the XML
+ui = re.sub(":/icons/", "icons:", ui, flags=re.DOTALL)  # fix icons paths
+Ui_DicomBrowserWin, _ = uic.loadUiType(StringIO(ui))  # create a local type definition
 
 
 class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
@@ -84,7 +83,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
         # setup ui
         self.setupUi(self)  # create UI elements based on the loaded .ui file
-        self.setWindowTitle("DicomBrowser v%s (FOR RESEARCH ONLY)" % (__version__,))
+        self.setWindowTitle(f"DicomBrowser v{__version__} (FOR RESEARCH ONLY)")
         self.set_status("")
 
         # connect signals
@@ -114,7 +113,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         layout.addWidget(self.image_view)
 
         # load the empty image placeholder into a ndarray
-        qimg = QtGui.QImage(":/icons/noimage.png")
+        qimg = QtGui.QImage.fromData(pkg_resources.read_binary(res,"noimage.png"))
         bytedata = qimg.constBits().asstring(qimg.width() * qimg.height())
         self.noimg = np.ndarray((qimg.width(), qimg.height()), dtype=np.ubyte, buffer=bytedata)
 
@@ -291,12 +290,11 @@ def main(args=[]):
     app.setAttribute(Qt.AA_DontUseNativeMenuBar)  # in macOS, forces menubar to be in window
     app.setStyle("Plastique")
 
-    # load the stylesheet included as a Qt resource
-    with closing(QtCore.QFile(":/css/DefaultUIStyle.css")) as f:
-        if f.open(QtCore.QFile.ReadOnly):
-            app.setStyleSheet(bytes(f.readAll()).decode("UTF-8"))
-        else:
-            print(f"Failed to read {f.fileName()}", file=sys.stderr)
+    # load the stylesheet 
+    style=pkg_resources.open_text(res,"DefaultUIStyle.css").read()
+    app.setStyleSheet(style)
+
+    QtCore.QDir.addSearchPath('icons', str(pkg_resources.files(res)))  # add search path for icons
 
     browser = DicomBrowser()
 

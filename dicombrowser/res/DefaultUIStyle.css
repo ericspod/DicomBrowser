@@ -69,7 +69,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-    image: url(:/icons/down.png);
+    image: url(icons:down.png);
     width:16px;
     height: 10px;
 }
@@ -131,13 +131,13 @@ QCheckBox::indicator, QRadioButton::indicator
 
 QCheckBox::indicator:checked, QGroupBox::indicator:checked, QRadioButton::indicator:checked
 {
-	image:url(:/icons/checkbox.png);
+	image:url(icons:checkbox.png);
 	padding: 1px;
 }
 
 QCheckBox::indicator:!checked, QGroupBox::indicator:!checked, QRadioButton::indicator:!checked
 {
-	image:url(:/icons/uncheckbox.png);
+	image:url(icons:uncheckbox.png);
 	padding: 1px;
 }
 
