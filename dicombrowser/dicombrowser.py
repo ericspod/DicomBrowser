@@ -21,13 +21,10 @@ DicomBrowser - simple lightweight Dicom browsing application.
 
 import sys
 import os
-import threading
 import re
 from multiprocessing import freeze_support
-from contextlib import closing
 import importlib.resources as pkg_resources
 
-from queue import Queue, Empty
 from io import StringIO
 
 import numpy as np
@@ -65,7 +62,6 @@ class LoadWorker(QtCore.QRunnable):
         if series and all(len(s.filenames) > 0 for s in series):
             for s in series:
                 s.sort_filenames()  # sort series contents by filename
-            # self.src_dict[self.src] = series
 
             self.update_signal.emit(self.src,series)
 
@@ -82,21 +78,12 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
     def __init__(self, parent=None):
         super().__init__(parent)
 
-        self.src_dict = {}  # map of source paths to series lists
         self.selected_series = None
 
         self.image_index = 0  # index of selected image
-        # self.series_map = OrderedDict()  # maps series table row tuples to DicomSeries object it was generated from
         self.series_columns = list(SERIES_LIST_COLUMNS)  # keywords for columns
-        # self.selected_row = -1  # selected series row
         self.last_dir = "."  # last loaded directory root
         self.filter_regex = ""  # regular expression to filter attributes by
-
-        # create the directory queue and loading thread objects
-        # self.src_queue = Queue()  # queue of directories to load
-        # self.load_dir_thread = threading.Thread(target=self._load_source_thread)
-        # self.load_dir_thread.daemon = True  # clean shutdown possible with daemon threads
-        # self.load_dir_thread.start()  # start the thread now, it will wait until something is put on self.src_queue
 
         # setup ui
         self.setupUi(self)  # create UI elements based on the loaded .ui file
@@ -156,28 +143,6 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.last_dir = os.path.dirname(rootdir)
         QtCore.QThreadPool.globalInstance().start(LoadWorker(rootdir,self.statusSignal,self.updateSignal))
 
-    def _load_source_thread(self):
-        """
-        This is run in a daemon thread and continually checks self.src_queue for a queued directory or zip file to scan
-        for Dicom files. It calls load_dicom_dir() for a given directory or load_dicom_zip() for a zip file and adds
-        the results to the self.src_list member.
-        """
-        while True:
-            try:
-                src = self.src_queue.get(True, 0.5)
-                loader = load_dicom_dir if os.path.isdir(src) else load_dicom_zip
-                series = loader(src, self.statusSignal.emit)
-
-                if series and all(len(s.filenames) > 0 for s in series):
-                    for s in series:
-                        s.sort_filenames()  # sort series contents by filename
-
-                    self.src_dict[src] = series
-
-                self.updateSignal.emit(src)
-            except Empty:
-                pass
-
     def _open_dir_dialog(self):
         """Opens the open file dialog to choose a directory to scan for Dicoms."""
         rootdir = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Choose Source Directory", self.last_dir))
@@ -192,9 +157,6 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
     def _update_series_view(self, srcname,series):
         """Updates the series view tree with a new source and updates the layout."""
-        # series = self.src_dict[srcname]
-        self.src_dict[srcname]=series
-
         columns = [s.get_attr_values(self.series_columns) for s in series]
         self.series_model.add_source(srcname, series, columns)
         self.seriesView.expandAll()
