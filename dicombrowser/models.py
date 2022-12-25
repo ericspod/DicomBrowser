@@ -34,7 +34,7 @@ def fill_attrs(model, dcm, columns, regex=None, maxValueSize=256):
         regex = ""  # no regex or bad pattern
 
     def _dataset_to_item(parent, d):
-        """Add every element in `d' to the QStandardItem object `parent', this will be recursive for list elements."""
+        """Add every element in `d` to the QStandardItem object `parent`, this will be recursive for list elements."""
         for elem in d:
             value = _elem_to_value(elem)
             tag = "(%04x, %04x)" % (elem.tag.group, elem.tag.elem)
@@ -68,7 +68,7 @@ def fill_attrs(model, dcm, columns, regex=None, maxValueSize=256):
                     parent1.appendRow(v)
 
     def _elem_to_value(elem):
-        """Return the value in `elem', which will be a string or a list of QStandardItem objects if elem.VR=='SQ'."""
+        """Return the value in `elem`, which will be a string or a list of QStandardItem objects if elem.VR=='SQ'."""
         value = None
         if elem.VR == "SQ":
             value = []

@@ -18,10 +18,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-try:
-    from .dicombrowser import mainargv
-except ImportError:
-    from dicombrowser import mainargv
+from dicombrowser import mainargv
 
 if __name__ == "__main__":
     mainargv()

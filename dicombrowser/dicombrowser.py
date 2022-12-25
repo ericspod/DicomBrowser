@@ -42,13 +42,32 @@ from .dicom import load_dicom_dir, load_dicom_zip, SERIES_LIST_COLUMNS, ATTR_TRE
 from .models import AttrItemModel, SeriesTreeModel
 
 
-# Load the ui file from the res module and remove the "resources" tag so that uic doesn't try (and fail) to load 
-# resources. The paths for icons is also changed from what is expected in Designer to what is used with the 
-# search path set in main().
-ui=pkg_resources.read_text(res,"DicomBrowserWin.ui")
+# Load the ui file from the res module and remove the "resources" tag so that uic doesn't try (and fail) to load
+# resources. The path for icons is also changed from what is expected in Designer using resource files to what is
+# used with the search path set in main().
+ui = pkg_resources.read_text(res, "DicomBrowserWin.ui")
 ui = re.sub("<resources>.*</resources>", "", ui, flags=re.DOTALL)  # get rid of the resources section in the XML
 ui = re.sub(":/icons/", "icons:", ui, flags=re.DOTALL)  # fix icons paths
 Ui_DicomBrowserWin, _ = uic.loadUiType(StringIO(ui))  # create a local type definition
+
+
+class LoadWorker(QtCore.QRunnable):
+    def __init__(self,src, status_signal,update_signal):
+        super().__init__()
+        self.src=src
+        self.status_signal=status_signal
+        self.update_signal=update_signal
+    
+    def run(self):
+        loader = load_dicom_dir if os.path.isdir(self.src) else load_dicom_zip
+        series = loader(self.src, self.status_signal.emit)
+
+        if series and all(len(s.filenames) > 0 for s in series):
+            for s in series:
+                s.sort_filenames()  # sort series contents by filename
+            # self.src_dict[self.src] = series
+
+            self.update_signal.emit(self.src,series)
 
 
 class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
@@ -58,11 +77,9 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
     """
 
     statusSignal = QtCore.pyqtSignal(str, int, int)  # signal for updating the status bar asynchronously
-    updateSignal = QtCore.pyqtSignal(str)  # signal for updating the source list and series table
+    updateSignal = QtCore.pyqtSignal(str, object)  # signal for updating the source list and series table
 
     def __init__(self, parent=None):
-        self.srcseriesView: QtWidgets.QTreeView
-
         super().__init__(parent)
 
         self.src_dict = {}  # map of source paths to series lists
@@ -76,10 +93,10 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.filter_regex = ""  # regular expression to filter attributes by
 
         # create the directory queue and loading thread objects
-        self.src_queue = Queue()  # queue of directories to load
-        self.load_dir_thread = threading.Thread(target=self._load_source_thread)
-        self.load_dir_thread.daemon = True  # clean shutdown possible with daemon threads
-        self.load_dir_thread.start()  # start the thread now, it will wait until something is put on self.srcQueue
+        # self.src_queue = Queue()  # queue of directories to load
+        # self.load_dir_thread = threading.Thread(target=self._load_source_thread)
+        # self.load_dir_thread.daemon = True  # clean shutdown possible with daemon threads
+        # self.load_dir_thread.start()  # start the thread now, it will wait until something is put on self.src_queue
 
         # setup ui
         self.setupUi(self)  # create UI elements based on the loaded .ui file
@@ -113,7 +130,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         layout.addWidget(self.image_view)
 
         # load the empty image placeholder into a ndarray
-        qimg = QtGui.QImage.fromData(pkg_resources.read_binary(res,"noimage.png"))
+        qimg = QtGui.QImage.fromData(pkg_resources.read_binary(res, "noimage.png"))
         bytedata = qimg.constBits().asstring(qimg.width() * qimg.height())
         self.noimg = np.ndarray((qimg.width(), qimg.height()), dtype=np.ubyte, buffer=bytedata)
 
@@ -125,18 +142,19 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         if e.key() == QtCore.Qt.Key_Escape:
             self.close()
         else:
-            QtWidgets.QMainWindow.keyPressEvent(self, e)
+            super().keyPressEvent(e)
 
     def show(self):
         """Calls the inherited show() method then sets the splitter positions."""
-        QtWidgets.QMainWindow.show(self)
+        super().show()
         self.seriesSplit.moveSplitter(200, 1)
         self.viewMetaSplitter.moveSplitter(600, 1)
 
     def add_source(self, rootdir):
         """Add the given directory to the queue of directories to load and set the self.lastDir value to its parent."""
-        self.src_queue.put(rootdir)
+        # self.src_queue.put(rootdir)
         self.last_dir = os.path.dirname(rootdir)
+        QtCore.QThreadPool.globalInstance().start(LoadWorker(rootdir,self.statusSignal,self.updateSignal))
 
     def _load_source_thread(self):
         """
@@ -152,7 +170,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
                 if series and all(len(s.filenames) > 0 for s in series):
                     for s in series:
-                        s.sort_filenames() # sort series contents by filename
+                        s.sort_filenames()  # sort series contents by filename
 
                     self.src_dict[src] = series
 
@@ -172,9 +190,10 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         if zipfile[0]:
             self.add_source(zipfile[0])
 
-    def _update_series_view(self, srcname):
-
-        series = self.src_dict[srcname]
+    def _update_series_view(self, srcname,series):
+        """Updates the series view tree with a new source and updates the layout."""
+        # series = self.src_dict[srcname]
+        self.src_dict[srcname]=series
 
         columns = [s.get_attr_values(self.series_columns) for s in series]
         self.series_model.add_source(srcname, series, columns)
@@ -182,6 +201,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.series_model.layoutChanged.emit()
 
     def _series_view_current_changed(self, current, prev):
+        """Called when a series is selected, if different set the viewed series to be visible."""
         if current.row() != prev.row():
             item: QtGui.QStandardItem = self.series_model.itemFromIndex(current)
             if item is not None:
@@ -290,11 +310,11 @@ def main(args=[]):
     app.setAttribute(Qt.AA_DontUseNativeMenuBar)  # in macOS, forces menubar to be in window
     app.setStyle("Plastique")
 
-    # load the stylesheet 
-    style=pkg_resources.open_text(res,"DefaultUIStyle.css").read()
+    # load the stylesheet
+    style = pkg_resources.open_text(res, "DefaultUIStyle.css").read()
     app.setStyleSheet(style)
 
-    QtCore.QDir.addSearchPath('icons', str(pkg_resources.files(res)))  # add search path for icons
+    QtCore.QDir.addSearchPath("icons", str(pkg_resources.files(res)))  # add search path for icons
 
     browser = DicomBrowser()
 

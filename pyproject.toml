@@ -11,8 +11,6 @@ dependencies = ["numpy", "pyqt5", "pyqtgraph", "pydicom", "pylibjpeg[all]"]
 requires-python = ">=3.8"
 authors = [{ name = "Eric Kerfoot", email = "eric.kerfoot@kcl.ac.uk" }]
 dynamic = ["version", "readme"]
-# readme = "Readme.md"
-
 
 [project.urls]
 homepage = "http://github.com/ericspod/DicomBrowser"
