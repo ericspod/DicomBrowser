@@ -95,7 +95,7 @@ def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
     loaded objects, and the total number to load. A status string of '' indicates loading is done. The default value
     causes no status indication to be made. Return value is a sequence of DicomSeries objects in no particular order.
     """
-    allfiles = list(filter(os.path.isfile, glob(rootdir + "/**/*", recursive=True)))
+    allfiles = list(filter(os.path.isfile, glob(rootdir + "/**", recursive=True)))
 
     numfiles = len(allfiles)
     series = {}

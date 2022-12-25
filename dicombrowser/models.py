@@ -89,7 +89,7 @@ def fill_attrs(model, dcm, columns, regex=None, maxValueSize=256):
 
 
 class AttrItemModel(QtGui.QStandardItemModel):
-    """This manages a list of attributes from a single Dicom file."""
+    """Manages a list of attributes from a single Dicom file."""
 
     def fill_attrs(self, dcm, columns, regex=None, maxValueSize=256):
         self.clear()
@@ -98,6 +98,7 @@ class AttrItemModel(QtGui.QStandardItemModel):
 
 
 class SeriesTreeModel(QtGui.QStandardItemModel):
+    """Represents the tree of Dicom series organised under nodes for each source file/directory."""
     def __init__(self, columns, data={}, parent=None):
         super().__init__(parent)
         self.columns = columns
