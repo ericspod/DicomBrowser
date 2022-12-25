@@ -18,10 +18,8 @@
 
 
 import re
-from operator import itemgetter
 
-from PyQt5 import QtGui, QtCore
-from PyQt5.QtCore import Qt
+from PyQt5 import QtGui
 
 from .dicom import KEYWORD_NAME_MAP
 

@@ -24,7 +24,6 @@ import os
 import re
 from multiprocessing import freeze_support
 import importlib.resources as pkg_resources
-
 from io import StringIO
 
 import numpy as np
@@ -49,12 +48,13 @@ Ui_DicomBrowserWin, _ = uic.loadUiType(StringIO(ui))  # create a local type defi
 
 
 class LoadWorker(QtCore.QRunnable):
-    def __init__(self,src, status_signal,update_signal):
+    """Loads Dicom data in a separate thread, updating the UI through the given signals."""
+    def __init__(self, src, status_signal, update_signal):
         super().__init__()
-        self.src=src
-        self.status_signal=status_signal
-        self.update_signal=update_signal
-    
+        self.src = src
+        self.status_signal = status_signal
+        self.update_signal = update_signal
+
     def run(self):
         loader = load_dicom_dir if os.path.isdir(self.src) else load_dicom_zip
         series = loader(self.src, self.status_signal.emit)
@@ -63,7 +63,7 @@ class LoadWorker(QtCore.QRunnable):
             for s in series:
                 s.sort_filenames()  # sort series contents by filename
 
-            self.update_signal.emit(self.src,series)
+            self.update_signal.emit(self.src, series)
 
 
 class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
@@ -137,25 +137,23 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.seriesSplit.moveSplitter(200, 1)
         self.viewMetaSplitter.moveSplitter(600, 1)
 
-    def add_source(self, rootdir):
-        """Add the given directory to the queue of directories to load and set the self.lastDir value to its parent."""
-        # self.src_queue.put(rootdir)
-        self.last_dir = os.path.dirname(rootdir)
-        QtCore.QThreadPool.globalInstance().start(LoadWorker(rootdir,self.statusSignal,self.updateSignal))
+    def add_source(self, src):
+        """Given `src`, a path to a directory or zip file, load data in a separate thread if `src` is not None."""
+        if src:
+            self.last_dir = os.path.dirname(src)
+            QtCore.QThreadPool.globalInstance().start(LoadWorker(src, self.statusSignal, self.updateSignal))
 
     def _open_dir_dialog(self):
         """Opens the open file dialog to choose a directory to scan for Dicoms."""
         rootdir = str(QtWidgets.QFileDialog.getExistingDirectory(self, "Choose Source Directory", self.last_dir))
-        if rootdir:
-            self.add_source(rootdir)
+        self.add_source(rootdir)
 
     def _open_zip_dialog(self):
         """Opens the open file dialog to choose a zip file to scan for Dicoms."""
         zipfile = QtWidgets.QFileDialog.getOpenFileName(self, "Choose Zip File", self.last_dir, "Zip Files (*.zip)")
-        if zipfile[0]:
-            self.add_source(zipfile[0])
+        self.add_source(zipfile[0])
 
-    def _update_series_view(self, srcname,series):
+    def _update_series_view(self, srcname, series):
         """Updates the series view tree with a new source and updates the layout."""
         columns = [s.get_attr_values(self.series_columns) for s in series]
         self.series_model.add_source(srcname, series, columns)
