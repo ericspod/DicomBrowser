@@ -78,11 +78,11 @@
           </item>
           <item>
            <widget class="QProgressBar" name="statusProgressBar">
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>16777215</height>
-             </size>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
             </property>
             <property name="toolTip">
              <string>Import progress</string>
@@ -102,7 +102,7 @@
            </widget>
           </item>
           <item>
-           <spacer name="horizontalSpacer">
+           <spacer name="seriesSpacer">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
             </property>

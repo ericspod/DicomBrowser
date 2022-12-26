@@ -138,7 +138,7 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
         self.viewMetaSplitter.moveSplitter(600, 1)
 
     def add_source(self, src):
-        """Given `src`, a path to a directory or zip file, load data in a separate thread if `src` is not None."""
+        """Given `src`, a path to a directory or zip file, load data in a separate thread if `src` is not empty."""
         if src:
             self.last_dir = os.path.dirname(src)
             QtCore.QThreadPool.globalInstance().start(LoadWorker(src, self.statusSignal, self.updateSignal))
