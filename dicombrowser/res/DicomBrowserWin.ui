@@ -28,6 +28,9 @@
        <enum>Qt::Vertical</enum>
       </property>
       <widget class="QGroupBox" name="sourceGroup">
+       <property name="toolTip">
+        <string>The Series view lists loaded Dicom series under their source directories or zip files, press one of the import buttons to start loading data into the application</string>
+       </property>
        <property name="title">
         <string>Series</string>
        </property>
@@ -118,6 +121,12 @@
         </item>
         <item row="2" column="0">
          <widget class="QTreeView" name="seriesView">
+          <property name="toolTip">
+           <string>List of loaded Dicom series under their sources</string>
+          </property>
+          <property name="editTriggers">
+           <set>QAbstractItemView::NoEditTriggers</set>
+          </property>
           <property name="alternatingRowColors">
            <bool>true</bool>
           </property>
@@ -136,19 +145,25 @@
         <number>10</number>
        </property>
        <widget class="QGroupBox" name="view2DGroup">
+        <property name="toolTip">
+         <string>Visualises the selected Dicom file </string>
+        </property>
         <property name="title">
          <string>2D View</string>
         </property>
        </widget>
        <widget class="QGroupBox" name="metadataGroup">
+        <property name="toolTip">
+         <string>Dicom attributes for the selected file</string>
+        </property>
         <property name="title">
-         <string>Metadata</string>
+         <string>Attributes</string>
         </property>
         <layout class="QGridLayout" name="gridLayout_5">
          <item row="1" column="0">
           <widget class="QTreeView" name="attrView">
            <property name="toolTip">
-            <string>List of DICOM tags</string>
+            <string>List of DICOM attributes</string>
            </property>
            <property name="verticalScrollBarPolicy">
             <enum>Qt::ScrollBarAlwaysOn</enum>

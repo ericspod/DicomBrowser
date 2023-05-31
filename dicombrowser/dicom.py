@@ -72,7 +72,7 @@ def get_scaled_image(dcm):
         rinter = float(dcm.get("RescaleIntercept", 0) or 0)
         img = dcm.pixel_array * rslope + rinter
         return img
-    except KeyError:
+    except (KeyError, ValueError):
         return None
 
 
@@ -143,7 +143,7 @@ def load_dicom_zip(filename, statusfunc=lambda s, c, n: None):
 
             try:
                 dcm = dicomio.read_file(s)
-            except:
+            except errors.InvalidDicomError:
                 pass  # ignore files which aren't Dicom files, various exceptions raised so no concise way to do this
             else:
                 seriesid = dcm.get("SeriesInstanceUID", "???")
