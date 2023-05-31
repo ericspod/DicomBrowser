@@ -72,7 +72,7 @@ def get_scaled_image(dcm):
         rinter = float(dcm.get("RescaleIntercept", 0) or 0)
         img = dcm.pixel_array * rslope + rinter
         return img
-    except (KeyError, ValueError):
+    except (KeyError, ValueError, AttributeError):
         return None
 
 
