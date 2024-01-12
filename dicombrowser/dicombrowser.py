@@ -113,8 +113,8 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
         # create the pyqtgraph object for viewing images
         self.image_view = pg.ImageView()
-        layout = QtWidgets.QGridLayout(self.view2DGroup)
-        layout.addWidget(self.image_view)
+        layout = self.view2DGroup.layout()
+        layout.insertWidget(0, self.image_view)
 
         # load the empty image placeholder into a ndarray
         qimg = QtGui.QImage.fromData(pkg_resources.read_binary(res, "noimage.png"))

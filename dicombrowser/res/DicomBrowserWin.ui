@@ -151,6 +151,21 @@
         <property name="title">
          <string>2D View</string>
         </property>
+        <layout class="QVBoxLayout" name="verticalLayout_3">
+         <item>
+          <widget class="QCheckBox" name="autoLevelsCheck">
+           <property name="toolTip">
+            <string>Automatically scale the value range in the image view, uncheck to use current levels across all images in series</string>
+           </property>
+           <property name="text">
+            <string>Auto Image Levels</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
        </widget>
        <widget class="QGroupBox" name="metadataGroup">
         <property name="toolTip">
@@ -226,6 +241,13 @@
        <number>6</number>
       </property>
       <item>
+       <widget class="QLabel" name="label_2">
+        <property name="text">
+         <string>Image Index: </string>
+        </property>
+       </widget>
+      </item>
+      <item>
        <widget class="QLabel" name="numLabel">
         <property name="sizePolicy">
          <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
@@ -269,19 +291,6 @@
         </property>
         <property name="tickInterval">
          <number>1</number>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QCheckBox" name="autoLevelsCheck">
-        <property name="toolTip">
-         <string>Automatically scale the value range in the image view, uncheck to use current levels across all images in series</string>
-        </property>
-        <property name="text">
-         <string>Auto Levels</string>
-        </property>
-        <property name="checked">
-         <bool>true</bool>
         </property>
        </widget>
       </item>
