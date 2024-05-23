@@ -5,12 +5,13 @@
 #
 # You may have to run "xhost +local:docker" beforehand to allow local connections. 
 
-FROM alpine:3.14
+FROM alpine:3.20
 
 RUN apk update && \
     apk add py3-qt5 py3-numpy py3-pip py3-pillow ttf-freefont mesa-dri-gallium && \
-    pip3 install pydicom pyqtgraph && \
-    rm -rf /var/cache/apk/*
+    rm -rf /var/cache/apk/* usr/lib/python3.12/EXTERNALLY-MANAGED &&\
+    pip3 install pydicom pyqtgraph
+    
 
 WORKDIR /dicombrowser
 

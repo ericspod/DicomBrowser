@@ -8,7 +8,7 @@ name = "dicombrowser"
 description = "Lightweight portable DICOM viewer with interface for images and tags"
 license = {text = "GPLv3, see LICENSE.txt"}
 dependencies = ["numpy", "pyqt5", "pyqtgraph", "pydicom", "pylibjpeg[all]"]
-requires-python = ">=3.8"
+requires-python = ">3.8"
 authors = [{ name = "Eric Kerfoot", email = "eric.kerfoot@kcl.ac.uk" }]
 dynamic = ["version", "readme"]
 
