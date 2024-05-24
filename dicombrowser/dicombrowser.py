@@ -34,7 +34,7 @@ from PyQt5.QtCore import Qt
 
 from ._version import __version__
 from . import res
-from .dicom import load_dicom_dir, load_dicom_zip, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
+from .dicom import load_dicom_dir, load_dicom_zip, get_2d_equivalent_image, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
 from .models import AttrItemModel, SeriesTreeModel
 
 
@@ -49,6 +49,7 @@ Ui_DicomBrowserWin, _ = uic.loadUiType(StringIO(ui))  # create a local type defi
 
 class LoadWorker(QtCore.QRunnable):
     """Loads Dicom data in a separate thread, updating the UI through the given signals."""
+
     def __init__(self, src, status_signal, update_signal):
         super().__init__()
         self.src = src
@@ -231,8 +232,8 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
             if img is None:  # if the image is None use the default "no image" object
                 img = self.noimg
-            # elif len(img.shape)==3: # multi-channel or multi-dimensional image, use average of dimensions
-            #    img=np.mean(img,axis=2)
+
+            img = get_2d_equivalent_image(img)  # get something renderable in 2D
 
             self.image_view.setImage(img.T, autoRange=auto_range, autoLevels=self.autoLevelsCheck.isChecked())
             self._fill_attr_view()

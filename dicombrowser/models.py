@@ -99,6 +99,7 @@ class AttrItemModel(QtGui.QStandardItemModel):
 
 class SeriesTreeModel(QtGui.QStandardItemModel):
     """Represents the tree of Dicom series organised under nodes for each source file/directory."""
+
     def __init__(self, columns, data={}, parent=None):
         super().__init__(parent)
         self.columns = columns

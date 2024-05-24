@@ -21,6 +21,7 @@ import zipfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
 from io import BytesIO
 from glob import glob
+from warnings import warn
 
 import numpy as np
 from pydicom import dicomio, datadict, errors
@@ -63,6 +64,30 @@ KEYWORD_NAME_MAP = {v[4]: v[2] for v in datadict.DicomDictionary.values()}
 KEYWORD_NAME_MAP.update(EXTRA_KEYWORDS)
 
 FULL_NAME_MAP = {v: k for k, v in KEYWORD_NAME_MAP.items()}  # maps full names to keywords
+
+
+def get_2d_equivalent_image(img):
+    """Given an array `img` of some arbitrary dimensions, attempt to choose a valid 2D gray/RGB/RGBA image from it."""
+    ndim = img.ndim
+    shape = img.shape
+    color_dim = ndim > 2 and shape[-1] in (1, 3, 4)
+
+    if ndim <= 2 or (ndim == 3 and color_dim):  # 0D array, 1D array, 2D grayscale or 2D RGB(A)
+        if ndim < 2:
+            warn(f"Image has unusual shape {shape}, attempting to visualise")
+
+        return img
+    elif ndim == 3:  # 3D grayscale
+        warn(f"Image is volume with shape {shape}, using mid-slice")
+    elif ndim == 4 and color_dim:
+        warn(f"Image is RGB(A) volume with shape {shape}, using mid-slice")
+    else:
+        warn(f"Image is unknown volume with shape {shape}, using mid-slices")
+
+    # attempt to slice the volume in every dimension that's not height, width, or the channels
+    stop = 3 if color_dim else 2  # dimensions to not slice in, ie. (height,width) or (height,width,channels)
+    slices = [s // 2 for s in shape[:-stop]] + [slice(None)] * stop
+    return img[tuple(slices)]
 
 
 def get_scaled_image(dcm):
