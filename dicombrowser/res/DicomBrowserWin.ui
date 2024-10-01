@@ -27,6 +27,9 @@
       <property name="orientation">
        <enum>Qt::Vertical</enum>
       </property>
+      <property name="childrenCollapsible">
+       <bool>false</bool>
+      </property>
       <widget class="QGroupBox" name="sourceGroup">
        <property name="toolTip">
         <string>The Series view lists loaded Dicom series under their source directories or zip files, press one of the import buttons to start loading data into the application</string>
@@ -119,6 +122,80 @@
           </item>
          </layout>
         </item>
+        <item row="4" column="0">
+         <layout class="QHBoxLayout" name="horizontalLayout">
+          <property name="topMargin">
+           <number>6</number>
+          </property>
+          <item>
+           <widget class="QLabel" name="label_2">
+            <property name="text">
+             <string>Image Index: </string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QLabel" name="numLabel">
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <property name="minimumSize">
+             <size>
+              <width>40</width>
+              <height>0</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>40</width>
+              <height>16777215</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>0</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QSlider" name="imageSlider">
+            <property name="toolTip">
+             <string>Position in selected series, sorted in alphabetical filename order</string>
+            </property>
+            <property name="pageStep">
+             <number>1</number>
+            </property>
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="invertedControls">
+             <bool>false</bool>
+            </property>
+            <property name="tickPosition">
+             <enum>QSlider::TicksAbove</enum>
+            </property>
+            <property name="tickInterval">
+             <number>1</number>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QCheckBox" name="autoLevelsCheck">
+            <property name="toolTip">
+             <string>Automatically scale the value range in the image view, uncheck to use current levels across all images in series</string>
+            </property>
+            <property name="text">
+             <string>Auto Image Levels</string>
+            </property>
+            <property name="checked">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
         <item row="2" column="0">
          <widget class="QTreeView" name="seriesView">
           <property name="toolTip">
@@ -132,6 +209,13 @@
           </property>
           <property name="sortingEnabled">
            <bool>true</bool>
+          </property>
+         </widget>
+        </item>
+        <item row="3" column="0">
+         <widget class="Line" name="line">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
          </widget>
         </item>
@@ -151,21 +235,7 @@
         <property name="title">
          <string>2D View</string>
         </property>
-        <layout class="QVBoxLayout" name="verticalLayout_3">
-         <item>
-          <widget class="QCheckBox" name="autoLevelsCheck">
-           <property name="toolTip">
-            <string>Automatically scale the value range in the image view, uncheck to use current levels across all images in series</string>
-           </property>
-           <property name="text">
-            <string>Auto Image Levels</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
+        <layout class="QVBoxLayout" name="verticalLayout_3"/>
        </widget>
        <widget class="QGroupBox" name="metadataGroup">
         <property name="toolTip">
@@ -224,7 +294,7 @@
            <item>
             <widget class="QLineEdit" name="filterLine">
              <property name="toolTip">
-              <string>Filter DICOM tags by name, ID, or content, using regular expressions, </string>
+              <string>Filter DICOM tags by name, ID, or content, using regular expressions</string>
              </property>
             </widget>
            </item>
@@ -236,65 +306,11 @@
      </widget>
     </item>
     <item>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="topMargin">
-       <number>6</number>
+     <widget class="Line" name="line_2">
+      <property name="orientation">
+       <enum>Qt::Horizontal</enum>
       </property>
-      <item>
-       <widget class="QLabel" name="label_2">
-        <property name="text">
-         <string>Image Index: </string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QLabel" name="numLabel">
-        <property name="sizePolicy">
-         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
-          <horstretch>0</horstretch>
-          <verstretch>0</verstretch>
-         </sizepolicy>
-        </property>
-        <property name="minimumSize">
-         <size>
-          <width>40</width>
-          <height>0</height>
-         </size>
-        </property>
-        <property name="maximumSize">
-         <size>
-          <width>40</width>
-          <height>16777215</height>
-         </size>
-        </property>
-        <property name="text">
-         <string>0</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QSlider" name="imageSlider">
-        <property name="toolTip">
-         <string>Position in selected series, sorted in alphabetical filename order</string>
-        </property>
-        <property name="pageStep">
-         <number>1</number>
-        </property>
-        <property name="orientation">
-         <enum>Qt::Horizontal</enum>
-        </property>
-        <property name="invertedAppearance">
-         <bool>false</bool>
-        </property>
-        <property name="tickPosition">
-         <enum>QSlider::TicksAbove</enum>
-        </property>
-        <property name="tickInterval">
-         <number>1</number>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     </widget>
     </item>
    </layout>
   </widget>
