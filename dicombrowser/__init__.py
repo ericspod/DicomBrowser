@@ -17,5 +17,6 @@
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
 
-from ._version import __version__, __author__, __copyright__
+# from ._version import __version__, __author__, __copyright__
 from .dicombrowser import mainargv
+    
