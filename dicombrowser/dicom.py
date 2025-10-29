@@ -104,7 +104,7 @@ def get_scaled_image(dcm):
 def load_dicom_file(filename):
     """Load the Dicom file `filename`, returns the filename and an abbreviated attribute dictionary."""
     try:
-        dcm = dicomio.read_file(filename, stop_before_pixels=True)
+        dcm = dicomio.dcmread(filename, stop_before_pixels=True)
         attrs = {t: dcm.get(t) for t in LOAD_ATTRS if t in dcm}
         return filename, attrs
     except errors.InvalidDicomError:
@@ -167,7 +167,7 @@ def load_dicom_zip(filename, statusfunc=lambda s, c, n: None):
             s = BytesIO(z.read(n))
 
             try:
-                dcm = dicomio.read_file(s)
+                dcm = dicomio.dcmread(s)
             except errors.InvalidDicomError:
                 pass  # ignore files which aren't Dicom files, various exceptions raised so no concise way to do this
             else:
@@ -227,7 +227,7 @@ class DicomSeries(object):
     def get_attr_object(self, index):
         """Get the object storing attr information from Dicom file at the given index."""
         if index not in self.attrcache:
-            dcm = dicomio.read_file(self.filenames[index], stop_before_pixels=True)
+            dcm = dicomio.dcmread(self.filenames[index], stop_before_pixels=True)
             self.attrcache[index] = dcm
 
         return self.attrcache[index]
@@ -261,7 +261,7 @@ class DicomSeries(object):
     def get_pixel_data(self, index):
         """Get the pixel data array for file at position `index` in self.filenames, or None if no pixel data."""
         if index not in self.imgcache:
-            dcm = dicomio.read_file(self.filenames[index])
+            dcm = dicomio.dcmread(self.filenames[index])
             img = get_scaled_image(dcm)
             self.imgcache[index] = img
 
