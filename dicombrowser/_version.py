@@ -31,8 +31,10 @@ try:
 except PackageNotFoundError:
     try:
         from setuptools_scm import get_version
+
         __version__ = get_version()
     except Exception as e:
         import warnings
+
         warnings.warn(f"Unable to get version from `importlib` or `setuptools_scm`: {e}")
         __version__ = "???"

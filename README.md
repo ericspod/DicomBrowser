@@ -8,7 +8,7 @@ This is intended to be a cross-platform utility suitable for previewing Dicom da
 
 ## Installation
 
-DicomBrowser requires **Python 3.8+**, **PyQt5**, **numpy**, **pydicom** and **pyqtgraph**, and optionally the libraries for pydicom used to load JPEG data.
+DicomBrowser requires **Python 3.11+**, **PyQt5**, **numpy**, **pydicom** and **pyqtgraph**, and optionally the libraries for pydicom used to load JPEG data.
 
 Installation through **pip**:
 
@@ -22,7 +22,7 @@ Installation from repo:
 
 This will create the entry point **dicombrowser** which accepts DICOM directories or zip files containing them:
 
-    dicombrowser MAGIX.zip
+    dicombrowser example.zip
     
 DicomBrowser can be run directly as a module from the repo:
 

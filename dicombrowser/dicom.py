@@ -26,7 +26,6 @@ from warnings import warn
 import numpy as np
 from pydicom import dicomio, datadict, errors
 
-
 # attribute names of default columns in the series list, this can be changed to pull out different attribute names for columns
 SERIES_LIST_COLUMNS = (
     "SeriesInstanceUID",

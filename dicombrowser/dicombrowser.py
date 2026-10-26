@@ -16,7 +16,7 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 """
-DicomBrowser - simple lightweight Dicom browsing application. 
+DicomBrowser - simple lightweight Dicom browsing application.
 """
 
 import sys
@@ -36,7 +36,6 @@ from ._version import __version__
 from . import res
 from .dicom import load_dicom_dir, load_dicom_zip, get_2d_equivalent_image, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
 from .models import AttrItemModel, SeriesTreeModel
-
 
 # Load the ui file from the res module and remove the "resources" tag so that uic doesn't try (and fail) to load
 # resources. The path for icons is also changed from what is expected in Designer using resource files to what is
