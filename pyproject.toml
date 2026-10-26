@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dicombrowser"
 description = "Lightweight portable DICOM viewer with interface for images and attributes"
-license-file = "LICENSE.txt"
+license-files = ["LICENSE.txt"]
 dependencies = ["numpy", "pyqt5", "pyqtgraph", "pydicom", "pylibjpeg[all]"]
 requires-python = ">=3.11"
 authors = [{ name = "Eric Kerfoot", email = "eric.kerfoot@kcl.ac.uk" }]
