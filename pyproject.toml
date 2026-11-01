@@ -17,6 +17,7 @@ homepage = "http://github.com/ericspod/DicomBrowser"
 
 [project.scripts]
 dicombrowser = "dicombrowser:mainargv"
+dicombrowser_cli = "dicombrowser:mainargv_cli"
 
 [tool.setuptools_scm]
 

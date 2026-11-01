@@ -4,9 +4,10 @@
 **/build
 **/dist
 **/.DS_Store
-DicomBrowser.egg-info/*
+dicombrowser.egg-info/*
 build/*
 dist/*
 *.spec
 .idea
 .vscode
+uv.lock

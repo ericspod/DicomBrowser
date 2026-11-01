@@ -32,10 +32,10 @@ import pyqtgraph as pg
 from PyQt5 import QtGui, QtCore, QtWidgets, uic
 from PyQt5.QtCore import Qt
 
-from ._version import __version__
-from . import res
-from .dicom import load_dicom_dir, load_dicom_zip, get_2d_equivalent_image, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
-from .models import AttrItemModel, SeriesTreeModel
+from dicombrowser._version import __version__
+from dicombrowser import res
+from dicombrowser.dicom import load_dicom_dir, load_dicom_zip, get_2d_equivalent_image, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
+from dicombrowser.models import AttrItemModel, SeriesTreeModel
 
 # Load the ui file from the res module and remove the "resources" tag so that uic doesn't try (and fail) to load
 # resources. The path for icons is also changed from what is expected in Designer using resource files to what is
@@ -155,8 +155,8 @@ class DicomBrowser(QtWidgets.QMainWindow, Ui_DicomBrowserWin):
 
     def _update_series_view(self, srcname, series):
         """Updates the series view tree with a new source and updates the layout."""
-        columns = [s.get_attr_values(self.series_columns) for s in series]
-        self.series_model.add_source(srcname, series, columns)
+        rows = [s.get_attr_values(self.series_columns) for s in series]
+        self.series_model.add_source(srcname, series, rows)
         self.seriesView.expandAll()
         self.series_model.layoutChanged.emit()
 

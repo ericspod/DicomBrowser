@@ -14,6 +14,10 @@ Installation through **pip**:
 
     pip install dicombrowser
 
+or through **uv**:
+
+    uv pip install dicombrowser
+
 Installation from repo:
 
     git clone https://github.com/ericspod/DicomBrowser.git
@@ -27,6 +31,14 @@ This will create the entry point **dicombrowser** which accepts DICOM directorie
 DicomBrowser can be run directly as a module from the repo:
 
     python -m dicombrowser
+
+To run with installing or checkout, use **pipx** or **uv**:
+
+    pipx run dicombrowser example.zip
+
+or:
+
+    uvx dicombrowser example.zip
 
 ## Docker
 

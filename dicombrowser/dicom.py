@@ -110,7 +110,7 @@ def load_dicom_file(filename):
         pass
 
 
-def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
+def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None) -> list["DicomSeries"]:
     """
     Load all the Dicom files from `rootdir` using `numprocs` number of processes. This will attempt to load each file
     found in `rootdir` and store from each file the attributes defined in LOAD_ATTRS. The filenames and the loaded
@@ -148,7 +148,7 @@ def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None):
     return list(series.values())
 
 
-def load_dicom_zip(filename, statusfunc=lambda s, c, n: None):
+def load_dicom_zip(filename, statusfunc=lambda s, c, n: None)-> list["DicomSeries"]:
     """
     Load Dicom images from given zip file `filename'. This uses the status callback `statusfunc' like load_dicom_dir().
     Loaded files will have their pixel data thus avoiding the need to reload the zip file when an image is viewed but is
@@ -222,6 +222,10 @@ class DicomSeries(object):
     def sort_filenames(self):
         """Concurrently sort filenames and associated attributes lists."""
         self.filenames, self.loadattrs = zip(*sorted(zip(self.filenames, self.loadattrs)))
+
+    @property
+    def num_files(self):
+        return len(self.filenames)
 
     def get_attr_object(self, index):
         """Get the object storing attr information from Dicom file at the given index."""
