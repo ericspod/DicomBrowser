@@ -32,7 +32,7 @@ DicomBrowser can be run directly as a module from the repo:
 
     python -m dicombrowser
 
-To run with installing or checkout, use **pipx** or **uv**:
+To run with installing or checkout, use **pipx** or **uvx**:
 
     pipx run dicombrowser example.zip
 
