@@ -23,55 +23,6 @@ from PyQt5 import QtGui
 
 from .dicom import KEYWORD_NAME_MAP
 
-def get_attrs_seq(dcm, regex=None, max_value_len=256):
-    """Fill the model with the attrs from `dcm`."""
-    try:
-        regex = re.compile(str(regex), re.DOTALL) if regex is not None else ""
-    except:
-        regex = ""  # no regex or bad pattern
-
-    def _dataset_to_item(parent:list, d):
-        for elem in d:
-            value = _elem_to_value(elem)
-            
-            tag = f"{elem.tag.group:04x},{elem.tag.elem:04x}"
-
-            if isinstance(value, str):
-                if len(value) > max_value_len:
-                    value = value[:max_value_len] + "..."
-
-                try:
-                    value = value.decode("ascii")
-                    if "\n" in value or "\r" in value:  # multiline text data should be shown as repr
-                        value = repr(value)
-                except:
-                    pass
-
-                if not regex or re.search(regex, str(elem.name) + tag + value) is not None:
-                    parent.append((str(elem.name), tag, value))
-
-            elif value is not None and len(value) > 0:
-                parent.append((str(elem.name), tag,list(value)))
-
-    def _elem_to_value(elem):
-        if elem.VR == "SQ":
-            value = []
-
-            for i, item in enumerate(elem):
-                parent1 =[]
-                _dataset_to_item(parent1, item)
-
-                if not regex or len(parent1)>0:  # discard sequences whose children have been filtered out
-                    value.append(parent1)
-
-            return value
-        elif elem.name != "Pixel Data":
-            return str(elem.value)
-
-    tparent=[]
-    _dataset_to_item(tparent, dcm)
-    return tparent
-
 
 def fill_attrs(model, dcm, regex=None, maxValueSize=256):
     """Fill the model with the attrs from `dcm`."""
