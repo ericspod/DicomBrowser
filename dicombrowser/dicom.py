@@ -19,12 +19,12 @@
 import os
 import zipfile
 from concurrent.futures import ProcessPoolExecutor, as_completed
-from io import BytesIO
 from glob import glob
+from io import BytesIO
 from warnings import warn
 
 import numpy as np
-from pydicom import dicomio, datadict, errors
+from pydicom import datadict, dicomio, errors
 
 # attribute names of default columns in the series list, this can be changed to pull out different attribute names for columns
 SERIES_LIST_COLUMNS = (
@@ -148,7 +148,7 @@ def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None) -> l
     return list(series.values())
 
 
-def load_dicom_zip(filename, statusfunc=lambda s, c, n: None)-> list["DicomSeries"]:
+def load_dicom_zip(filename, statusfunc=lambda s, c, n: None) -> list["DicomSeries"]:
     """
     Load Dicom images from given zip file `filename'. This uses the status callback `statusfunc' like load_dicom_dir().
     Loaded files will have their pixel data thus avoiding the need to reload the zip file when an image is viewed but is

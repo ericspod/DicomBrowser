@@ -19,22 +19,27 @@
 DicomBrowser - simple lightweight Dicom browsing application.
 """
 
-import sys
+import importlib.resources as pkg_resources
 import os
 import re
-from multiprocessing import freeze_support
-import importlib.resources as pkg_resources
+import sys
 from io import StringIO
+from multiprocessing import freeze_support
 
 import numpy as np
 import pyqtgraph as pg
-
-from PyQt5 import QtGui, QtCore, QtWidgets, uic
+from PyQt5 import QtCore, QtGui, QtWidgets, uic
 from PyQt5.QtCore import Qt
 
-from dicombrowser._version import __version__
 from dicombrowser import res
-from dicombrowser.dicom import load_dicom_dir, load_dicom_zip, get_2d_equivalent_image, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
+from dicombrowser._version import __version__
+from dicombrowser.dicom import (
+    ATTR_TREE_COLUMNS,
+    SERIES_LIST_COLUMNS,
+    get_2d_equivalent_image,
+    load_dicom_dir,
+    load_dicom_zip,
+)
 from dicombrowser.models import AttrItemModel, SeriesTreeModel
 
 # Load the ui file from the res module and remove the "resources" tag so that uic doesn't try (and fail) to load

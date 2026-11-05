@@ -24,7 +24,7 @@ __copyright__ = (
     "all rights reserved. Licensed under the GPL (see LICENSE.txt)."
 )
 
-from importlib.metadata import version, PackageNotFoundError
+from importlib.metadata import PackageNotFoundError, version
 
 try:
     __version__ = version("dicombrowser")

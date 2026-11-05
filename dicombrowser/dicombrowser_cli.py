@@ -1,13 +1,14 @@
 import os
-import sys
 import re
+import sys
 from multiprocessing import freeze_support
 
-from textual import on, events, work
+from textual import events, on, work
 from textual.app import App, ComposeResult
-from textual.widgets import Footer, Header, Input, Label, ProgressBar, Static, DataTable
-from textual.containers import Horizontal, Center, Vertical
-from dicombrowser.dicom import DicomSeries, load_dicom_dir, load_dicom_zip, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
+from textual.containers import Center, Horizontal, Vertical
+from textual.widgets import DataTable, Footer, Header, Input, Label, ProgressBar, Static
+
+from dicombrowser.dicom import ATTR_TREE_COLUMNS, SERIES_LIST_COLUMNS, DicomSeries, load_dicom_dir, load_dicom_zip
 
 CSS = """
 DataTable#series {
@@ -99,7 +100,7 @@ class DicomBrowserCLI(App):
     def __init__(self, argv):
         super().__init__()
         self.argv = argv
-        self.series_columns = list(SERIES_LIST_COLUMNS)  # keywords for columns
+        self.series_columns = list(SERIES_LIST_COLUMNS)
         self.attr_columns = list(ATTR_TREE_COLUMNS)
         self.series_table = DataTable(id="series", cursor_type="row", zebra_stripes=True)
         self.sel_image = ClickableProgressBar(show_percentage=False, show_eta=False, show_bar=True, total=1)
@@ -117,15 +118,13 @@ class DicomBrowserCLI(App):
         yield Header()
         yield self.series_table
 
-        # image scroll label and bar
-        with Horizontal(id="sel_image_h"):
+        with Horizontal(id="sel_image_h"):  # image scroll label and bar
             yield self.sel_image_text
             with Center():
                 yield self.sel_image
 
         with Vertical():  # needed to ensure table's size and position are correct
-            # filter regex text box
-            with Horizontal(id="regex_h"):
+            with Horizontal(id="regex_h"):  # filter regex text box
                 yield Label("Filter: ")
                 yield self.attr_regex
 
@@ -202,7 +201,3 @@ def mainargv_cli():
     """setuptools compatible entry point."""
     freeze_support()
     DicomBrowserCLI(sys.argv[1:]).run()
-
-
-if __name__ == "__main__":
-    mainargv_cli()
