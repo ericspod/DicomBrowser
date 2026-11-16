@@ -24,9 +24,10 @@ from multiprocessing import freeze_support
 from textual import events, on, work
 from textual.app import App, ComposeResult
 from textual.containers import Center, Horizontal, Vertical
-from textual.widgets import Footer, Header, Input, Label, ProgressBar, Static, DataTable
 from textual.renderables.bar import Bar
-from dicombrowser.dicom import DicomSeries, load_dicom_dir, load_dicom_zip, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
+from textual.widgets import DataTable, Footer, Header, Input, Label, ProgressBar, Static
+
+from dicombrowser.dicom import ATTR_TREE_COLUMNS, SERIES_LIST_COLUMNS, DicomSeries, load_dicom_dir, load_dicom_zip
 
 CSS = """
 DataTable#series {
