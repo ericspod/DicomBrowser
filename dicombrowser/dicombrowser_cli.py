@@ -24,9 +24,9 @@ from multiprocessing import freeze_support
 from textual import events, on, work
 from textual.app import App, ComposeResult
 from textual.containers import Center, Horizontal, Vertical
-from textual.widgets import DataTable, Footer, Header, Input, Label, ProgressBar, Static
-
-from dicombrowser.dicom import ATTR_TREE_COLUMNS, SERIES_LIST_COLUMNS, DicomSeries, load_dicom_dir, load_dicom_zip
+from textual.widgets import Footer, Header, Input, Label, ProgressBar, Static, DataTable
+from textual.renderables.bar import Bar
+from dicombrowser.dicom import DicomSeries, load_dicom_dir, load_dicom_zip, SERIES_LIST_COLUMNS, ATTR_TREE_COLUMNS
 
 CSS = """
 DataTable#series {
@@ -89,6 +89,13 @@ def iter_attrs(dcm, regex=None, max_value_len=256, depth=0):
 
 
 class ClickableProgressBar(ProgressBar):
+    class ClickableBar(Bar):
+        HALF_BAR_LEFT: str = "▐"
+        BAR: str = "█"
+        HALF_BAR_RIGHT: str = "▌"
+
+    BAR_RENDERABLE = ClickableBar
+
     class Seeked(events.Event):
         def __init__(self, value: float) -> None:
             super().__init__()
