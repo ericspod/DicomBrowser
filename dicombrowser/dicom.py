@@ -110,7 +110,12 @@ def load_dicom_file(filename):
         pass
 
 
-def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs=None) -> list["DicomSeries"]:
+def load_dicom_source(path: str, statusfunc=lambda s, c, n: None, numprocs: int | None = None) -> list["DicomSeries"]:
+    """Load all the Dicom files from the directory or zip file `path`. See other load functions for arguments."""
+    return load_dicom_dir(path, statusfunc, numprocs) if os.path.isdir(path) else load_dicom_zip(path, statusfunc)
+
+
+def load_dicom_dir(rootdir, statusfunc=lambda s, c, n: None, numprocs: int | None = None) -> list["DicomSeries"]:
     """
     Load all the Dicom files from `rootdir` using `numprocs` number of processes. This will attempt to load each file
     found in `rootdir` and store from each file the attributes defined in LOAD_ATTRS. The filenames and the loaded

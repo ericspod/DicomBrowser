@@ -33,13 +33,7 @@ from PyQt5.QtCore import Qt
 
 from dicombrowser import res
 from dicombrowser._version import __version__
-from dicombrowser.dicom import (
-    ATTR_TREE_COLUMNS,
-    SERIES_LIST_COLUMNS,
-    get_2d_equivalent_image,
-    load_dicom_dir,
-    load_dicom_zip,
-)
+from dicombrowser.dicom import ATTR_TREE_COLUMNS, SERIES_LIST_COLUMNS, get_2d_equivalent_image, load_dicom_source
 from dicombrowser.models import AttrItemModel, SeriesTreeModel
 
 # Load the ui file from the res module and remove the "resources" tag so that uic doesn't try (and fail) to load
@@ -61,8 +55,7 @@ class LoadWorker(QtCore.QRunnable):
         self.update_signal = update_signal
 
     def run(self):
-        loader = load_dicom_dir if os.path.isdir(self.src) else load_dicom_zip
-        series = loader(self.src, self.status_signal.emit)
+        series = load_dicom_source(self.src, self.status_signal.emit)
 
         if series and all(len(s.filenames) > 0 for s in series):
             for s in series:

@@ -16,7 +16,6 @@
 # You should have received a copy of the GNU General Public License along
 # with this program (LICENSE.txt).  If not, see <http://www.gnu.org/licenses/>
 
-import os
 import re
 import sys
 from multiprocessing import freeze_support
@@ -26,7 +25,7 @@ from textual.app import App, ComposeResult
 from textual.containers import Center, Horizontal, Vertical
 from textual.widgets import DataTable, Footer, Header, Input, Label, ProgressBar, Static
 
-from dicombrowser.dicom import ATTR_TREE_COLUMNS, SERIES_LIST_COLUMNS, DicomSeries, load_dicom_dir, load_dicom_zip
+from dicombrowser.dicom import ATTR_TREE_COLUMNS, SERIES_LIST_COLUMNS, DicomSeries, load_dicom_source
 
 CSS = """
 DataTable#series {
@@ -53,38 +52,30 @@ Horizontal#sel_image_h {
 """
 
 
-def iter_attrs(dcm, regex=None, max_value_len=256, depth=0):
-    try:
-        regex = re.compile(str(regex), re.DOTALL) if regex else None
-    except:
-        regex = None  # no regex or bad pattern
-
-    prefix = "  " * depth
+def iter_attrs(dcm, regex=None, max_value_len=256, prefix=""):
     for elem in dcm:
-        if elem.name == "Pixel Data":
-            continue
-
-        if regex is not None and re.search(regex, f"{elem.name} {elem.tag} {elem.value}") is None:
-            continue
-
         tag = f"{elem.tag.group:04x},{elem.tag.elem:04x}"
+        value = str(elem.value)
+
+        if elem.name == "Pixel Data":
+            value = f"{len(elem.value)}"
+        elif len(value) > max_value_len:
+            value = value[:max_value_len] + "..."
+
+        try:
+            value = value.decode("ascii")
+            if "\n" in value or "\r" in value:  # multiline text data should be shown as repr
+                value = repr(value)
+        except:
+            pass
+
         if elem.VR == "SQ":
-            yield prefix + elem.name, tag, "----"
+            yield prefix + elem.name, tag, f"-- {len(elem.value)} Items --"
+
             for subvalue in elem:
-                yield from iter_attrs(subvalue, regex, max_value_len, depth + 1)
-                yield prefix + "----", "----", "----"
-        else:
-            value = str(elem.value)
-            if len(value) > max_value_len:
-                value = value[:max_value_len] + "..."
-
-            try:
-                value = value.decode("ascii")
-                if "\n" in value or "\r" in value:  # multiline text data should be shown as repr
-                    value = repr(value)
-            except:
-                pass
-
+                yield from iter_attrs(subvalue, regex, max_value_len, prefix + "  ")
+                yield prefix + "  ----", "----", "----"
+        elif not regex or re.search(regex, f"{elem.name} {tag} {value}", re.DOTALL) is not None:
             yield prefix + elem.name, tag, value
 
 
@@ -151,18 +142,14 @@ class DicomBrowserCLI(App):
 
         yield Footer()
 
-    def on_mount(self):
-        for a in self.argv:
-            self._load(a)
-
     @work(thread=True)
-    def _load(self, src: str):
+    def on_mount(self):
         def _stat(_, count, total):
             title = self.TITLE if total == 0 else f"Loading {src!r} ({count}/{total})"
             self.call_from_thread(setattr, self.app, "title", title)
 
-        loader = load_dicom_dir if os.path.isdir(src) else load_dicom_zip
-        self.call_from_thread(self._add_series, src, loader(src, _stat))
+        for src in self.argv:
+            self.call_from_thread(self._add_series, src, load_dicom_source(src, _stat))
 
     def _add_series(self, src: str, series: list[DicomSeries]):
         self.series_table.add_row(f"---- {src} ----")
